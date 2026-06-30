@@ -22,9 +22,28 @@ class AdminSmokeTest extends TestCase
             '/admin/users', '/admin/users/create',
             '/admin/program-types', '/admin/program-types/create',
             '/admin/clients', '/admin/clients/create',
+            '/admin/programs', '/admin/programs/create',
         ] as $url) {
             $this->actingAs($u)->get($url)->assertSuccessful();
         }
+    }
+
+    public function test_program_edit_with_relation_managers_renders(): void
+    {
+        $u = User::where('email', 'superadmin@pro-mentoring.com')->firstOrFail();
+        $program = \App\Models\Program::firstOrFail();
+
+        $this->actingAs($u)->get("/admin/programs/{$program->getKey()}/edit")->assertSuccessful();
+    }
+
+    public function test_las_bambas_program_seeded_with_four_stages_and_ten_sessions(): void
+    {
+        $program = \App\Models\Program::where('slug', 'professional-mentoring-las-bambas')->firstOrFail();
+
+        $this->assertSame(4, $program->stages()->count());
+        $this->assertSame(10, $program->sessions()->count());
+        $this->assertSame('2026-06-23', $program->start_date->toDateString());
+        $this->assertSame('2027-04-21', $program->end_date->toDateString());
     }
 
     public function test_org_admin_cannot_open_organizations(): void

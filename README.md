@@ -51,7 +51,10 @@ La suite usa PostgreSQL (la app depende de operadores JSON de Postgres).
 ## Estado del proyecto (roadmap por fases)
 - [x] **Fase 1 — Fundación:** auth, roles, tenancy por organización, branding de
       login, gestión de organizaciones/clientes/usuarios/tipos de programa, seeders.
-- [ ] Fase 2 — Programas, etapas y sesiones configurables.
+- [x] **Fase 2 — Programas, etapas y sesiones configurables:** CRUD de programas
+      con etapas y sesiones reordenables (relation managers), labels de rol
+      heredados del tipo, y seeder del programa Las Bambas (4 etapas, 10 sesiones
+      con fechas reales jun-2026 → abr-2027). Todo editable.
 - [ ] Fase 3 — Campos dinámicos, plantillas de formulario y registro de sesiones.
 - [ ] Fase 4 — Asignaciones, invitaciones por correo, portales mentor/mentee.
 - [ ] Fase 5 — Herramientas, materiales y encuestas.

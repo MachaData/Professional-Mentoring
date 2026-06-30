@@ -39,4 +39,9 @@ class Organization extends Model
     {
         return $this->hasMany(ProgramType::class);
     }
+
+    public function programs(): HasMany
+    {
+        return $this->hasMany(Program::class);
+    }
 }
