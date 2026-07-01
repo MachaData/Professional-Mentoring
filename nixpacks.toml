@@ -1,0 +1,21 @@
+# Nixpacks build config (Railway). Web service; run worker + scheduler as
+# separate Railway services with the start commands noted in DEPLOYMENT.md.
+
+[phases.setup]
+nixPkgs = ["php83", "phpExtensions.pdo_pgsql", "phpExtensions.intl", "phpExtensions.gd", "phpExtensions.zip", "nodejs_20"]
+
+[phases.install]
+cmds = [
+  "composer install --no-dev --optimize-autoloader --no-interaction",
+  "npm ci",
+]
+
+[phases.build]
+cmds = [
+  "npm run build",
+  "php artisan config:cache",
+  "php artisan route:cache",
+]
+
+[start]
+cmd = "php artisan migrate --force && php artisan storage:link || true && php artisan serve --host 0.0.0.0 --port ${PORT:-8080}"

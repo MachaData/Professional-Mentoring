@@ -4,13 +4,27 @@ use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\Auth\PortalLoginController;
 use App\Http\Controllers\Mentor\MentorController;
 use App\Http\Controllers\Participant\ParticipantController;
+use App\Http\Middleware\SetLocale;
 use App\Models\SessionRecord;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => Auth::check()
     ? redirect()->to(PortalLoginController::homeFor(Auth::user()))
     : redirect()->route('portal.login'));
+
+// --- Locale switch ----------------------------------------------------------
+Route::get('/locale/{locale}', function (Request $request, string $locale) {
+    if (in_array($locale, SetLocale::SUPPORTED, true)) {
+        $request->session()->put('locale', $locale);
+        if ($user = $request->user()) {
+            $user->forceFill(['locale' => $locale])->save();
+        }
+    }
+
+    return back();
+})->name('locale.switch');
 
 // --- Authentication ---------------------------------------------------------
 Route::middleware('guest')->group(function () {

@@ -86,7 +86,13 @@ La suite usa PostgreSQL (la app depende de operadores JSON de Postgres).
       completadas/pendientes/vencidas, avance por programa); widgets del dashboard
       (stats + gráfico de sesiones por estado); exportación a Excel (avance por
       programa, usuarios) y **carga masiva** de usuarios y asignaciones por Excel.
-- [ ] Fase 8 — i18n ES/EN y despliegue (Railway / DigitalOcean).
+- [x] **Fase 8 — i18n ES/EN y despliegue:** selector de idioma en los portales
+      (persistido en sesión y en el usuario), middleware `SetLocale` en web y admin,
+      traducciones `lang/en.json`; artefactos de despliegue (`Procfile`,
+      `nixpacks.toml`) y guía [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) para
+      Railway / DigitalOcean con worker de cola y scheduler.
+
+**🎉 MVP completo** — las 8 fases del roadmap están implementadas y con tests.
 
 ## Despliegue
 Preparado para Railway / DigitalOcean. Variables de entorno para DB, mail,

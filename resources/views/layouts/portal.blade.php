@@ -23,15 +23,24 @@
                 @endif
                 <span class="font-semibold" style="color: var(--brand)">{{ config('app.name') }}</span>
             </div>
-            @auth
-                <div class="flex items-center gap-4 text-sm">
+            <div class="flex items-center gap-4 text-sm">
+                <div class="flex items-center gap-1 text-xs">
+                    @foreach (['es' => 'ES', 'en' => 'EN'] as $code => $label)
+                        <a href="{{ route('locale.switch', $code) }}"
+                           class="px-2 py-1 rounded {{ app()->getLocale() === $code ? 'text-white' : 'text-gray-400 hover:text-gray-700' }}"
+                           @if(app()->getLocale() === $code) style="background: var(--brand)" @endif>
+                            {{ $label }}
+                        </a>
+                    @endforeach
+                </div>
+                @auth
                     <span class="text-gray-600 hidden sm:inline">{{ $user->name }}</span>
                     <form method="POST" action="{{ route('portal.logout') }}">
                         @csrf
                         <button class="text-gray-500 hover:text-gray-900">{{ __('Salir') }}</button>
                     </form>
-                </div>
-            @endauth
+                @endauth
+            </div>
         </div>
     </nav>
 
