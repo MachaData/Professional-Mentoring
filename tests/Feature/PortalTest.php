@@ -89,6 +89,30 @@ class PortalTest extends TestCase
         ]);
     }
 
+    public function test_welcome_popup_shows_on_first_login_then_is_dismissed(): void
+    {
+        $mentee = $this->mentee();
+        $this->assertNull($mentee->onboarding_seen_at);
+
+        // First visit shows the welcome popup.
+        $this->actingAs($mentee)->get('/me')->assertSee('Te damos la bienvenida');
+
+        // Dismissing marks it seen.
+        $this->actingAs($mentee)->post('/onboarding/seen')->assertNoContent();
+        $this->assertNotNull($mentee->fresh()->onboarding_seen_at);
+
+        // It no longer appears.
+        $this->actingAs($mentee->fresh())->get('/me')->assertDontSee('Te damos la bienvenida');
+    }
+
+    public function test_participant_sees_session_join_link(): void
+    {
+        // The demo seeds a meeting link on Session 1's record.
+        $this->actingAs($this->mentee()->fresh())->get('/me')
+            ->assertSee('Ingresar a la sesión')
+            ->assertSee('meet.google.com');
+    }
+
     public function test_completed_visible_fields_appear_on_participant_dashboard(): void
     {
         $assignment = Assignment::where('participant_id', $this->mentee()->id)->firstOrFail();

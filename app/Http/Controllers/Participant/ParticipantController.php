@@ -22,19 +22,19 @@ class ParticipantController extends Controller
             ->first();
 
         $sessions = collect();
-        $tools = new Collection;
-        $surveys = new Collection;
+        $sidebarTools = new Collection;
+        $sidebarSurveys = new Collection;
 
         if ($assignment) {
             $resolver = app(ResourceResolver::class);
-            $tools = $resolver->toolsFor($assignment->program, 'participant');
-            $surveys = $resolver->surveysFor($assignment->program, 'participant');
+            $sidebarTools = $resolver->programTools($assignment->program, 'participant');
+            $sidebarSurveys = $resolver->programSurveys($assignment->program, 'participant');
 
             $records = $assignment->records->keyBy('session_id');
 
             $sessions = $assignment->program->sessions
                 ->where('visible_to_participant', true)
-                ->map(function ($session) use ($records) {
+                ->map(function ($session) use ($records, $resolver) {
                     $record = $records->get($session->id);
 
                     // Only fields flagged visible to participant, from completed records.
@@ -54,10 +54,13 @@ class ParticipantController extends Controller
                         'session' => $session,
                         'record' => $record,
                         'visible_values' => $visible,
+                        'meeting_url' => $record?->meeting_url,
+                        'tools' => $resolver->sessionTools($session, 'participant'),
+                        'surveys' => $resolver->sessionSurveys($session, 'participant'),
                     ];
                 });
         }
 
-        return view('participant.dashboard', compact('participant', 'assignment', 'sessions', 'tools', 'surveys'));
+        return view('participant.dashboard', compact('participant', 'assignment', 'sessions', 'sidebarTools', 'sidebarSurveys'));
     }
 }

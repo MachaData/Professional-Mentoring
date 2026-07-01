@@ -21,11 +21,15 @@ class RegisterSession extends Component
     /** @var array<string,mixed> */
     public array $data = [];
 
+    /** Per-dupla join link the mentor coordinates with the participant. */
+    public ?string $meetingUrl = null;
+
     public function mount(SessionRecord $record): void
     {
         abort_unless($record->facilitator_id === auth()->id(), 403);
 
         $this->record = $record;
+        $this->meetingUrl = $record->meeting_url;
         $this->data = app(DynamicFormBuilder::class)->stateFromRecord($record);
     }
 
@@ -103,6 +107,7 @@ class RegisterSession extends Component
             $this->record->update([
                 'status' => $status,
                 'real_session_date' => $realDate ?: null,
+                'meeting_url' => $this->meetingUrl ?: null,
                 'submitted_at' => $status === SessionRecord::STATUS_COMPLETED ? now() : $this->record->submitted_at,
             ]);
         });

@@ -22,6 +22,7 @@ class Organization extends Model
             'welcome_text' => 'array',
             'footer_text' => 'array',
             'is_operator' => 'boolean',
+            'welcome_enabled' => 'boolean',
         ];
     }
 

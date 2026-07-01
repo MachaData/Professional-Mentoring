@@ -49,22 +49,26 @@ class MentorController extends Controller
         $assignment->load(['participant', 'program.sessions.stage']);
 
         $records = $assignment->records()->get()->keyBy('session_id');
+        $resolver = app(ResourceResolver::class);
 
-        $sessions = $assignment->program->sessions->map(function ($session) use ($records, $assignment) {
+        $sessions = $assignment->program->sessions->map(function ($session) use ($records, $assignment, $resolver) {
             $record = $records->get($session->id);
 
             return [
                 'session' => $session,
                 'record' => $record,
                 'status' => $record ? $this->effectiveStatus($record, $assignment) : SessionRecord::STATUS_PENDING,
+                'meeting_url' => $record?->meeting_url,
+                'tools' => $resolver->sessionTools($session, 'facilitator'),
+                'surveys' => $resolver->sessionSurveys($session, 'facilitator'),
             ];
         });
 
-        $resolver = app(ResourceResolver::class);
-        $tools = $resolver->toolsFor($assignment->program, 'facilitator');
-        $surveys = $resolver->surveysFor($assignment->program, 'facilitator');
+        // Program-wide resources for the right sidebar.
+        $sidebarTools = $resolver->programTools($assignment->program, 'facilitator');
+        $sidebarSurveys = $resolver->programSurveys($assignment->program, 'facilitator');
 
-        return view('mentor.participant', compact('assignment', 'sessions', 'tools', 'surveys'));
+        return view('mentor.participant', compact('assignment', 'sessions', 'sidebarTools', 'sidebarSurveys'));
     }
 
     /** A pending/draft record whose session window has passed is "expired". */

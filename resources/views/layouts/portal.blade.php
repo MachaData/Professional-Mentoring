@@ -76,6 +76,10 @@
         @yield('content')
     </main>
 
+    @auth
+        @include('partials.welcome-modal')
+    @endauth
+
     @stack('scripts')
 </body>
 </html>

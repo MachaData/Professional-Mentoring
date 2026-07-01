@@ -1,6 +1,16 @@
 @php $locale = app()->getLocale(); @endphp
 <div>
     <form wire:submit="complete" class="space-y-5">
+        {{-- Per-dupla join link --}}
+        <div class="rounded-xl border border-brand-100 bg-brand-50/50 p-4">
+            <label class="pm-label flex items-center gap-1.5">
+                <svg class="h-4 w-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/></svg>
+                {{ __('Link de la sesión') }}
+            </label>
+            <input type="url" wire:model="meetingUrl" class="pm-input" placeholder="https://meet.google.com/…  ·  Zoom  ·  Teams">
+            <p class="mt-1 text-xs text-slate-400">{{ __('El participante verá este enlace para ingresar a la reunión.') }}</p>
+        </div>
+
         @foreach ($fields as $field)
             @php
                 $key = 'field_'.$field->id;

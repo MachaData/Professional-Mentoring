@@ -35,6 +35,12 @@ class ResourcesSeeder extends Seeder
         );
         $this->attach($workbook, $program->id);
 
+        // Demo of a per-session material: attach the workbook to Session 1 too.
+        $firstSession = $program->sessions()->where('number', 1)->first();
+        if ($firstSession) {
+            $workbook->relations()->firstOrCreate(['session_id' => $firstSession->id]);
+        }
+
         $guide = Tool::updateOrCreate(
             ['organization_id' => $org->id, 'type' => 'guide', 'category' => 'mentor_guide'],
             [

@@ -69,6 +69,15 @@ class OrganizationForm
                         Textarea::make('footer_text.es')->label('Pie de página (ES)')->rows(2),
                         Textarea::make('footer_text.en')->label('Footer (EN)')->rows(2),
                     ]),
+
+                Section::make('Popup de bienvenida (primer ingreso)')
+                    ->description('Se muestra una sola vez a cada usuario al ingresar. Usa el texto de bienvenida de arriba.')
+                    ->columns(2)
+                    ->schema([
+                        Toggle::make('welcome_enabled')->label('Mostrar popup de bienvenida')->default(true),
+                        TextInput::make('welcome_video_url')->label('Link de video (YouTube / Vimeo)')
+                            ->url()->placeholder('https://www.youtube.com/watch?v=…'),
+                    ]),
             ]);
     }
 }

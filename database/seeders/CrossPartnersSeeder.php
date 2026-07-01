@@ -32,9 +32,11 @@ class CrossPartnersSeeder extends Seeder
                 'is_operator' => true,
                 'default_locale' => 'es',
                 'welcome_text' => [
-                    'es' => 'Bienvenido a Professional Mentoring',
-                    'en' => 'Welcome to Professional Mentoring',
+                    'es' => "Te damos la bienvenida a Professional Mentoring.\nAquí encontrarás tus sesiones, materiales y acuerdos. Revisa el video para conocer cómo aprovechar la plataforma.",
+                    'en' => "Welcome to Professional Mentoring.\nHere you'll find your sessions, materials and agreements. Watch the video to learn how to make the most of the platform.",
                 ],
+                'welcome_enabled' => true,
+                'welcome_video_url' => 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
                 'footer_text' => [
                     'es' => 'Professional Mentoring © by CrossPartners Group',
                     'en' => 'Professional Mentoring © by CrossPartners Group',

@@ -34,6 +34,12 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [PortalLoginController::class, 'logout'])->name('portal.logout');
+
+    Route::post('/onboarding/seen', function (Request $request) {
+        $request->user()->forceFill(['onboarding_seen_at' => now()])->save();
+
+        return response()->noContent();
+    })->name('onboarding.seen');
     Route::get('/password/change', [ChangePasswordController::class, 'show'])->name('password.change');
     Route::post('/password/change', [ChangePasswordController::class, 'update'])->name('password.change.update');
 });
