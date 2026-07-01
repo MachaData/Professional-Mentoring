@@ -50,4 +50,32 @@ class CustomField extends Model
     {
         return $this->belongsTo(FormTemplate::class);
     }
+
+    /**
+     * Options as a value => label map for the current locale, supporting both a
+     * plain {value: label} map and a list of ["value","label"] entries.
+     *
+     * @return array<string,string>
+     */
+    public function resolvedOptions(?string $locale = null): array
+    {
+        $locale ??= app()->getLocale();
+        $result = [];
+
+        foreach ($this->options_json ?? [] as $key => $option) {
+            if (is_array($option)) {
+                $value = $option['value'] ?? $key;
+                $label = is_array($option['label'] ?? null)
+                    ? ($option['label'][$locale] ?? reset($option['label']))
+                    : ($option['label'] ?? $value);
+                $result[$value] = $label;
+            } elseif (is_string($key)) {
+                $result[$key] = $option;
+            } else {
+                $result[$option] = $option;
+            }
+        }
+
+        return $result;
+    }
 }

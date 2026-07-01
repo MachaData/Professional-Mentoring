@@ -4,45 +4,69 @@
 @section('content')
 @php $locale = app()->getLocale(); @endphp
 
-<h1 class="text-2xl font-bold mb-6">{{ __('Hola') }}, {{ $facilitator->name }}</h1>
+<div class="mb-8">
+    <p class="text-sm font-medium text-brand-600">{{ __('Panel del mentor') }}</p>
+    <h1 class="mt-1 text-3xl font-bold">{{ __('Hola') }}, {{ explode(' ', $facilitator->name)[0] }} 👋</h1>
+</div>
 
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-    @foreach ([
-        ['label' => __('Participantes'), 'value' => $stats['participants'], 'color' => 'text-gray-900'],
-        ['label' => __('Pendientes'), 'value' => $stats['pending'], 'color' => 'text-amber-600'],
-        ['label' => __('Completadas'), 'value' => $stats['completed'], 'color' => 'text-green-600'],
-        ['label' => __('Vencidas'), 'value' => $stats['expired'], 'color' => 'text-red-600'],
-    ] as $card)
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <div class="text-3xl font-bold {{ $card['color'] }}">{{ $card['value'] }}</div>
-            <div class="text-sm text-gray-500 mt-1">{{ $card['label'] }}</div>
+<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    @php
+        $cards = [
+            ['label' => __('Participantes'), 'value' => $stats['participants'], 'tone' => 'slate', 'icon' => 'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z'],
+            ['label' => __('Pendientes'), 'value' => $stats['pending'], 'tone' => 'amber', 'icon' => 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z'],
+            ['label' => __('Completadas'), 'value' => $stats['completed'], 'tone' => 'emerald', 'icon' => 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
+            ['label' => __('Vencidas'), 'value' => $stats['expired'], 'tone' => 'rose', 'icon' => 'M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z'],
+        ];
+        $tones = [
+            'slate' => 'bg-slate-100 text-slate-600', 'amber' => 'bg-amber-100 text-amber-600',
+            'emerald' => 'bg-emerald-100 text-emerald-600', 'rose' => 'bg-rose-100 text-rose-600',
+        ];
+    @endphp
+    @foreach ($cards as $card)
+        <div class="pm-card p-5">
+            <span class="grid h-10 w-10 place-items-center rounded-xl {{ $tones[$card['tone']] }}">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $card['icon'] }}"/></svg>
+            </span>
+            <div class="mt-3 text-3xl font-bold text-slate-900">{{ $card['value'] }}</div>
+            <div class="text-sm text-slate-500">{{ $card['label'] }}</div>
         </div>
     @endforeach
 </div>
 
-<h2 class="text-lg font-semibold mb-3">{{ __('Mis participantes') }}</h2>
+<div class="mt-10 flex items-center justify-between">
+    <h2 class="text-lg font-semibold">{{ __('Mis participantes') }}</h2>
+    <span class="text-sm text-slate-400">{{ $assignments->count() }}</span>
+</div>
 
-<div class="bg-white rounded-xl border border-gray-200 divide-y">
+<div class="mt-4 grid gap-3 sm:grid-cols-2">
     @forelse ($assignments as $assignment)
         @php
             $total = $assignment->records->count();
             $done = $assignment->records->where('status', 'completed')->count();
+            $pct = $total ? round($done / $total * 100) : 0;
+            $initials = collect(explode(' ', $assignment->participant->name))->take(2)->map(fn ($p) => mb_substr($p, 0, 1))->implode('');
         @endphp
-        <a href="{{ route('mentor.participant', $assignment) }}"
-           class="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition">
-            <div>
-                <div class="font-medium">{{ $assignment->participant->name }}</div>
-                <div class="text-sm text-gray-500">{{ $assignment->program->getTranslation('name', $locale) }}</div>
-            </div>
-            <div class="text-right">
-                <div class="text-sm font-medium">{{ $done }}/{{ $total }} {{ __('sesiones') }}</div>
-                <div class="w-32 bg-gray-100 rounded-full h-2 mt-1">
-                    <div class="h-2 rounded-full" style="width: {{ $total ? round($done / $total * 100) : 0 }}%; background: var(--brand)"></div>
+        <a href="{{ route('mentor.participant', $assignment) }}" class="pm-card pm-card-hover group flex items-center gap-4 p-5">
+            <span class="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-slate-700 to-slate-900 text-sm font-semibold text-white">{{ $initials }}</span>
+            <div class="min-w-0 flex-1">
+                <div class="truncate font-semibold text-slate-900">{{ $assignment->participant->name }}</div>
+                <div class="truncate text-sm text-slate-500">{{ $assignment->program->getTranslation('name', $locale) }}</div>
+                <div class="mt-2 flex items-center gap-2">
+                    <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                        <div class="h-full rounded-full bg-brand-600 transition-all" style="width: {{ $pct }}%"></div>
+                    </div>
+                    <span class="text-xs font-medium text-slate-400">{{ $done }}/{{ $total }}</span>
                 </div>
             </div>
+            <svg class="h-5 w-5 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-500" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
         </a>
     @empty
-        <div class="px-5 py-8 text-center text-gray-500 text-sm">{{ __('Aún no tienes participantes asignados.') }}</div>
+        <div class="pm-card col-span-full grid place-items-center gap-2 p-12 text-center">
+            <span class="grid h-12 w-12 place-items-center rounded-full bg-slate-100 text-slate-400">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+            </span>
+            <p class="text-sm text-slate-500">{{ __('Aún no tienes participantes asignados.') }}</p>
+        </div>
     @endforelse
 </div>
 @endsection

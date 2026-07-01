@@ -4,45 +4,87 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ __('Ingresar') }} · {{ config('app.name') }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-    <div class="w-full max-w-md">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-            <h1 class="text-2xl font-bold text-center" style="color:#E30613">{{ config('app.name') }}</h1>
-            <p class="text-center text-gray-500 text-sm mt-1 mb-6">{{ __('Accede a tu programa de acompañamiento') }}</p>
+<body class="min-h-screen">
+<div class="grid min-h-screen lg:grid-cols-2">
+
+    {{-- Brand panel --}}
+    <div class="relative hidden overflow-hidden bg-ink lg:block">
+        <div class="absolute inset-0 bg-gradient-to-br from-brand-700 via-brand-800 to-ink"></div>
+        <div class="pm-grid-bg absolute inset-0 opacity-40"></div>
+        <div class="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-brand-500/30 blur-3xl"></div>
+        <div class="absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-brand-400/20 blur-3xl"></div>
+
+        <div class="relative flex h-full flex-col justify-between p-12 text-white">
+            <div class="flex items-center gap-2.5">
+                <span class="grid h-10 w-10 place-items-center rounded-xl bg-white/10 font-display font-bold ring-1 ring-white/20">PM</span>
+                <span class="font-display text-lg font-semibold">Professional Mentoring</span>
+            </div>
+
+            <div class="max-w-md">
+                <h1 class="font-display text-4xl font-bold leading-tight text-white">
+                    {{ __('Tu proceso de mentoring, en un solo lugar.') }}
+                </h1>
+                <p class="mt-4 text-white/70">
+                    {{ __('Sesiones, materiales y acuerdos claros — acompañamiento con la metodología EPIC.') }}
+                </p>
+
+                <div class="mt-10 flex flex-wrap gap-2.5">
+                    @foreach ([__('Exploración'), __('Planeamiento'), __('Implementación'), __('Cierre')] as $i => $step)
+                        <span class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-sm ring-1 ring-white/15">
+                            <span class="grid h-5 w-5 place-items-center rounded-full bg-white/20 text-xs font-semibold">{{ $i + 1 }}</span>
+                            {{ $step }}
+                        </span>
+                    @endforeach
+                </div>
+            </div>
+
+            <p class="text-sm text-white/50">© {{ date('Y') }} CrossPartners Group</p>
+        </div>
+    </div>
+
+    {{-- Form panel --}}
+    <div class="flex items-center justify-center px-6 py-12">
+        <div class="w-full max-w-sm">
+            <div class="mb-8 lg:hidden">
+                <span class="grid h-11 w-11 place-items-center rounded-xl bg-brand-600 font-display font-bold text-white">PM</span>
+            </div>
+
+            <h2 class="font-display text-2xl font-bold text-slate-900">{{ __('Bienvenido de nuevo') }}</h2>
+            <p class="mt-1.5 text-sm text-slate-500">{{ __('Accede a tu programa de acompañamiento') }}</p>
 
             @if($errors->any())
-                <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                <div class="mt-6 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800">
                     {{ $errors->first() }}
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('portal.login.attempt') }}" class="space-y-4">
+            <form method="POST" action="{{ route('portal.login.attempt') }}" class="mt-6 space-y-4">
                 @csrf
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Correo') }}</label>
-                    <input type="email" name="email" value="{{ old('email') }}" required autofocus
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500">
+                    <label class="pm-label">{{ __('Correo') }}</label>
+                    <input type="email" name="email" value="{{ old('email') }}" required autofocus class="pm-input" placeholder="tu@correo.com">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Contraseña') }}</label>
-                    <input type="password" name="password" required
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500">
+                    <label class="pm-label">{{ __('Contraseña') }}</label>
+                    <input type="password" name="password" required class="pm-input" placeholder="••••••••">
                 </div>
-                <label class="flex items-center gap-2 text-sm text-gray-600">
-                    <input type="checkbox" name="remember" class="rounded border-gray-300 text-red-600 focus:ring-red-500">
+                <label class="flex items-center gap-2 text-sm text-slate-600">
+                    <input type="checkbox" name="remember" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                     {{ __('Recordarme') }}
                 </label>
-                <button type="submit"
-                    class="w-full rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 transition">
-                    {{ __('Ingresar') }}
-                </button>
+                <button type="submit" class="pm-btn-brand w-full">{{ __('Ingresar') }}</button>
             </form>
+
+            <p class="mt-8 text-center text-xs text-slate-400">
+                {{ __('Professional Mentoring © by CrossPartners Group') }}
+            </p>
         </div>
-        <p class="text-center text-xs text-gray-400 mt-6">
-            {{ __('Professional Mentoring © by CrossPartners Group') }}
-        </p>
     </div>
+</div>
 </body>
 </html>

@@ -2,39 +2,65 @@
 
 namespace App\Livewire\Mentor;
 
+use App\Enums\FieldType;
 use App\Models\Assignment;
+use App\Models\CustomField;
 use App\Models\SessionRecord;
 use App\Services\DynamicFormBuilder;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
-class RegisterSession extends Component implements HasForms
+class RegisterSession extends Component
 {
-    use InteractsWithForms;
+    use WithFileUploads;
 
     public SessionRecord $record;
 
     /** @var array<string,mixed> */
-    public ?array $data = [];
+    public array $data = [];
 
     public function mount(SessionRecord $record): void
     {
         abort_unless($record->facilitator_id === auth()->id(), 403);
 
         $this->record = $record;
-        $this->form->fill(app(DynamicFormBuilder::class)->stateFromRecord($record));
+        $this->data = app(DynamicFormBuilder::class)->stateFromRecord($record);
     }
 
-    public function form(Schema $schema): Schema
+    /** @return Collection<int,CustomField> */
+    public function getFieldsProperty(): Collection
     {
-        $fields = $this->record->session->customFields()->where('status', 'active')->get();
+        return $this->record->session->customFields()->where('status', 'active')->get();
+    }
 
-        return $schema
-            ->components(app(DynamicFormBuilder::class)->components($fields))
-            ->statePath('data');
+    protected function inputFields(): Collection
+    {
+        return $this->fields->reject(fn (CustomField $f) => $f->field_type->isLayout());
+    }
+
+    /** @return array<string,array<int,string>> */
+    protected function rules(): array
+    {
+        $rules = [];
+        foreach ($this->inputFields() as $field) {
+            if ($field->is_required) {
+                $rules["data.field_{$field->id}"] = ['required'];
+            }
+        }
+
+        return $rules;
+    }
+
+    protected function validationAttributes(): array
+    {
+        $attrs = [];
+        foreach ($this->inputFields() as $field) {
+            $attrs["data.field_{$field->id}"] = $field->getTranslation('label', app()->getLocale());
+        }
+
+        return $attrs;
     }
 
     public function saveDraft(): void
@@ -45,7 +71,7 @@ class RegisterSession extends Component implements HasForms
 
     public function complete(): void
     {
-        $this->form->validate();
+        $this->validate();
         $this->persist(SessionRecord::STATUS_COMPLETED);
         session()->flash('status', __('Sesión registrada.'));
 
@@ -54,8 +80,19 @@ class RegisterSession extends Component implements HasForms
 
     protected function persist(string $status): void
     {
-        $fields = $this->record->session->customFields()->where('status', 'active')->get();
-        $state = $this->form->getState();
+        $fields = $this->fields;
+        $state = $this->data;
+
+        // Persist any uploaded files first, replacing the temp upload with a path.
+        foreach ($fields as $field) {
+            if ($field->field_type === FieldType::File) {
+                $key = "field_{$field->id}";
+                $upload = $state[$key] ?? null;
+                if ($upload && ! is_string($upload)) {
+                    $state[$key] = $upload->store('session-records', 'public');
+                }
+            }
+        }
 
         DB::transaction(function () use ($fields, $state, $status) {
             app(DynamicFormBuilder::class)->saveValues($this->record, $fields, $state);
@@ -65,7 +102,7 @@ class RegisterSession extends Component implements HasForms
 
             $this->record->update([
                 'status' => $status,
-                'real_session_date' => $realDate,
+                'real_session_date' => $realDate ?: null,
                 'submitted_at' => $status === SessionRecord::STATUS_COMPLETED ? now() : $this->record->submitted_at,
             ]);
         });
@@ -81,6 +118,8 @@ class RegisterSession extends Component implements HasForms
 
     public function render()
     {
-        return view('livewire.mentor.register-session');
+        return view('livewire.mentor.register-session', [
+            'fields' => $this->fields,
+        ]);
     }
 }
