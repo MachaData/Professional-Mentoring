@@ -81,7 +81,11 @@ La suite usa PostgreSQL (la app depende de operadores JSON de Postgres).
       la ventana de cada sesión (N días antes/después del inicio/fin) por
       destinatario, comando `reminders:dispatch` (scheduler diario) idempotente con
       registro en `email_logs`, y las invitaciones usan la plantilla editable.
-- [ ] Fase 7 — Dashboards, reportes y export/import Excel.
+- [x] **Fase 7 — Dashboards, reportes y Excel:** `ReportService` con métricas
+      (programas, facilitadores, participantes, asignaciones, sesiones
+      completadas/pendientes/vencidas, avance por programa); widgets del dashboard
+      (stats + gráfico de sesiones por estado); exportación a Excel (avance por
+      programa, usuarios) y **carga masiva** de usuarios y asignaciones por Excel.
 - [ ] Fase 8 — i18n ES/EN y despliegue (Railway / DigitalOcean).
 
 ## Despliegue

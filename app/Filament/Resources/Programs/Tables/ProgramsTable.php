@@ -2,12 +2,16 @@
 
 namespace App\Filament\Resources\Programs\Tables;
 
+use App\Exports\ProgramProgressExport;
+use App\Models\Program;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProgramsTable
 {
@@ -42,6 +46,14 @@ class ProgramsTable
             ])
             ->recordActions([
                 EditAction::make(),
+                Action::make('exportProgress')
+                    ->label('Exportar avance')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->action(fn (Program $record) => Excel::download(
+                        new ProgramProgressExport($record),
+                        'avance-'.$record->slug.'.xlsx'
+                    )),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
