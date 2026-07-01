@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             CrossPartnersSeeder::class,
             LasBambasProgramSeeder::class,
             MentoringFieldsSeeder::class,
+            ResourcesSeeder::class,
             DemoDuplaSeeder::class,
         ]);
     }

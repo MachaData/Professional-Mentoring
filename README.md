@@ -70,7 +70,12 @@ La suite usa PostgreSQL (la app depende de operadores JSON de Postgres).
       envíos); portal del mentor (dashboard, participantes, registro de sesión con
       formulario dinámico en Livewire) y portal del mentee (programa, mentor,
       sesiones y acuerdos visibles). Login branded y control de acceso por rol.
-- [ ] Fase 5 — Herramientas, materiales y encuestas.
+- [x] **Fase 5 — Herramientas, materiales y encuestas:** biblioteca reutilizable
+      de recursos (16 tipos) asociable a programa/etapa/sesión con visibilidad por
+      rol; encuestas externas por link (Google Forms) con alcance y momento de
+      visualización. `ResourceResolver` filtra por rol y los recursos aparecen en
+      los portales de mentor y mentee. Seeder con el workbook, la guía y la encuesta
+      de satisfacción de Las Bambas.
 - [ ] Fase 6 — Plantillas de correo y recordatorios programados.
 - [ ] Fase 7 — Dashboards, reportes y export/import Excel.
 - [ ] Fase 8 — i18n ES/EN y despliegue (Railway / DigitalOcean).

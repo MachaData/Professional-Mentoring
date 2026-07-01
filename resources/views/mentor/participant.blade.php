@@ -55,4 +55,8 @@
         </div>
     @endforeach
 </div>
+
+<div class="mt-8">
+    @include('partials.resources', ['tools' => $tools, 'surveys' => $surveys])
+</div>
 @endsection

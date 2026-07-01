@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mentor;
 use App\Http\Controllers\Controller;
 use App\Models\Assignment;
 use App\Models\SessionRecord;
+use App\Services\ResourceResolver;
 use Illuminate\Http\Request;
 
 class MentorController extends Controller
@@ -59,7 +60,11 @@ class MentorController extends Controller
             ];
         });
 
-        return view('mentor.participant', compact('assignment', 'sessions'));
+        $resolver = app(ResourceResolver::class);
+        $tools = $resolver->toolsFor($assignment->program, 'facilitator');
+        $surveys = $resolver->surveysFor($assignment->program, 'facilitator');
+
+        return view('mentor.participant', compact('assignment', 'sessions', 'tools', 'surveys'));
     }
 
     /** A pending/draft record whose session window has passed is "expired". */

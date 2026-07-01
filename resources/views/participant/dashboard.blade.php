@@ -29,6 +29,8 @@
         </div>
     </div>
 
+    @include('partials.resources', ['tools' => $tools, 'surveys' => $surveys])
+
     <h2 class="text-lg font-semibold mb-3">{{ __('Mis sesiones') }}</h2>
     <div class="space-y-4">
         @foreach ($sessions as $row)
