@@ -77,6 +77,19 @@
                                                 {{ $session->start_date->format('d/m/Y') }} – {{ $session->end_date?->format('d/m/Y') }}
                                             </p>
                                         @endif
+                                        @php $rec = $row['record']; @endphp
+                                        @if($rec && ($rec->attendance !== 'pending' || $rec->modality))
+                                            <div class="mt-2 flex flex-wrap gap-1.5">
+                                                @if($rec->attendance !== 'pending')
+                                                    <span class="pm-pill ring-1 {{ ['attended'=>'bg-emerald-50 text-emerald-700 ring-emerald-200','absent'=>'bg-rose-50 text-rose-700 ring-rose-200','rescheduled'=>'bg-amber-50 text-amber-700 ring-amber-200'][$rec->attendance] ?? 'bg-slate-100 text-slate-600 ring-slate-200' }}">
+                                                        {{ __(App\Models\SessionRecord::ATTENDANCE[$rec->attendance]) }}
+                                                    </span>
+                                                @endif
+                                                @if($rec->modality)
+                                                    <span class="pm-pill bg-slate-100 text-slate-600">{{ __(App\Models\SessionRecord::MODALITY[$rec->modality]) }}</span>
+                                                @endif
+                                            </div>
+                                        @endif
                                     </div>
                                     @if($row['record'])
                                         <a href="{{ route('mentor.register', $row['record']) }}"

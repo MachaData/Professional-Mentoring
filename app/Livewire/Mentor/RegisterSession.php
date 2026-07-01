@@ -7,8 +7,8 @@ use App\Models\Assignment;
 use App\Models\CustomField;
 use App\Models\SessionRecord;
 use App\Services\DynamicFormBuilder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -18,17 +18,24 @@ class RegisterSession extends Component
 
     public SessionRecord $record;
 
-    /** @var array<string,mixed> */
-    public array $data = [];
-
-    /** Per-dupla join link the mentor coordinates with the participant. */
+    /** Structured fields tied to this dupla's record. */
+    public ?string $realSessionDate = null;
+    public string $attendance = 'pending';
+    public ?string $modality = null;
     public ?string $meetingUrl = null;
+
+    /** @var array<string,mixed> Dynamic custom-field values. */
+    public array $data = [];
 
     public function mount(SessionRecord $record): void
     {
         abort_unless($record->facilitator_id === auth()->id(), 403);
 
         $this->record = $record;
+        // Format the date as a plain Y-m-d string so <input type=date> shows it.
+        $this->realSessionDate = $record->real_session_date?->format('Y-m-d');
+        $this->attendance = $record->attendance ?: 'pending';
+        $this->modality = $record->modality;
         $this->meetingUrl = $record->meeting_url;
         $this->data = app(DynamicFormBuilder::class)->stateFromRecord($record);
     }
@@ -47,7 +54,13 @@ class RegisterSession extends Component
     /** @return array<string,array<int,string>> */
     protected function rules(): array
     {
-        $rules = [];
+        $rules = [
+            'realSessionDate' => ['nullable', 'date'],
+            'attendance' => ['required', 'in:'.implode(',', array_keys(SessionRecord::ATTENDANCE))],
+            'modality' => ['nullable', 'in:'.implode(',', array_keys(SessionRecord::MODALITY))],
+            'meetingUrl' => ['nullable', 'url'],
+        ];
+
         foreach ($this->inputFields() as $field) {
             if ($field->is_required) {
                 $rules["data.field_{$field->id}"] = ['required'];
@@ -59,7 +72,11 @@ class RegisterSession extends Component
 
     protected function validationAttributes(): array
     {
-        $attrs = [];
+        $attrs = [
+            'realSessionDate' => __('Fecha real de la sesión'),
+            'attendance' => __('Asistencia'),
+            'meetingUrl' => __('Link de la reunión'),
+        ];
         foreach ($this->inputFields() as $field) {
             $attrs["data.field_{$field->id}"] = $field->getTranslation('label', app()->getLocale());
         }
@@ -101,12 +118,11 @@ class RegisterSession extends Component
         DB::transaction(function () use ($fields, $state, $status) {
             app(DynamicFormBuilder::class)->saveValues($this->record, $fields, $state);
 
-            $realDateField = $fields->firstWhere('name', 'real_session_date');
-            $realDate = $realDateField ? ($state["field_{$realDateField->id}"] ?? null) : null;
-
             $this->record->update([
                 'status' => $status,
-                'real_session_date' => $realDate ?: null,
+                'attendance' => $this->attendance,
+                'modality' => $this->modality ?: null,
+                'real_session_date' => $this->realSessionDate ?: null,
                 'meeting_url' => $this->meetingUrl ?: null,
                 'submitted_at' => $status === SessionRecord::STATUS_COMPLETED ? now() : $this->record->submitted_at,
             ]);

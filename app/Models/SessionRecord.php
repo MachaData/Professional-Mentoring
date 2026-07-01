@@ -19,6 +19,20 @@ class SessionRecord extends Model
     public const STATUS_CANCELLED = 'cancelled';
     public const STATUS_EXPIRED = 'expired';
 
+    /** @return array<string,string> attendance value => label */
+    public const ATTENDANCE = [
+        'pending' => 'Pendiente',
+        'attended' => 'Asistió',
+        'absent' => 'No asistió',
+        'rescheduled' => 'Reprogramada',
+    ];
+
+    /** @return array<string,string> modality value => label */
+    public const MODALITY = [
+        'virtual' => 'Virtual',
+        'in_person' => 'Presencial',
+    ];
+
     protected $guarded = ['id'];
 
     protected function casts(): array

@@ -49,13 +49,12 @@ Route::middleware(['auth', 'password.changed', 'role:facilitator'])
     ->prefix('mentor')->group(function () {
         Route::get('/', [MentorController::class, 'dashboard'])->name('mentor.dashboard');
         Route::get('/participants/{assignment}', [MentorController::class, 'participant'])->name('mentor.participant');
-        Route::get('/records/{record}/register', function (SessionRecord $record) {
-            return view('mentor.register', compact('record'));
-        })->name('mentor.register');
+        Route::get('/records/{record}/register', [MentorController::class, 'register'])->name('mentor.register');
     });
 
 // --- Participant portal -----------------------------------------------------
 Route::middleware(['auth', 'password.changed', 'role:participant'])
     ->prefix('me')->group(function () {
         Route::get('/', [ParticipantController::class, 'dashboard'])->name('participant.dashboard');
+        Route::get('/sessions/{session}', [ParticipantController::class, 'session'])->name('participant.session');
     });

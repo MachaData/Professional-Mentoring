@@ -6,7 +6,7 @@ use App\Models\Program;
 use App\Models\Session;
 use App\Models\SessionRecord;
 use App\Services\DynamicFormBuilder;
-use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -36,8 +36,8 @@ class DynamicFormTest extends TestCase
         $components = collect($builder->components($session->customFields))
             ->keyBy(fn ($c) => $c->getName());
 
-        // select field -> Select, textarea field -> Textarea
-        $this->assertInstanceOf(Select::class, $components["field_{$byName['session_status']->id}"]);
+        // text field -> TextInput, textarea field -> Textarea
+        $this->assertInstanceOf(TextInput::class, $components["field_{$byName['topic']->id}"]);
         $this->assertInstanceOf(Textarea::class, $components["field_{$byName['summary']->id}"]);
     }
 
@@ -54,11 +54,11 @@ class DynamicFormTest extends TestCase
         ]);
 
         $summary = $fields->firstWhere('name', 'summary');
-        $date = $fields->firstWhere('name', 'real_session_date');
+        $agreements = $fields->firstWhere('name', 'agreements');
 
         $state = [
             "field_{$summary->id}" => 'Buena sesión inicial',
-            "field_{$date->id}" => '2026-07-01',
+            "field_{$agreements->id}" => 'Acuerdo firme',
         ];
 
         $builder->saveValues($record, $fields, $state);

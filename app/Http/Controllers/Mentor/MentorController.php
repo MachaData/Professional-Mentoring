@@ -70,6 +70,19 @@ class MentorController extends Controller
         return view('mentor.participant', compact('assignment', 'sessions', 'sidebarTools'));
     }
 
+    public function register(Request $request, SessionRecord $record)
+    {
+        abort_unless($record->facilitator_id === $request->user()->id, 403);
+
+        $record->load('session.stage');
+        $resolver = app(ResourceResolver::class);
+
+        $tools = $resolver->sessionTools($record->session, 'facilitator');
+        $surveyUrl = $record->session->survey_url;
+
+        return view('mentor.register', compact('record', 'tools', 'surveyUrl'));
+    }
+
     /** A pending/draft record whose session window has passed is "expired". */
     protected function effectiveStatus(SessionRecord $record, Assignment $assignment): string
     {

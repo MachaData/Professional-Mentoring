@@ -68,25 +68,41 @@ class PortalTest extends TestCase
         $assignment = Assignment::where('facilitator_id', $this->mentor()->id)->firstOrFail();
         $record = $assignment->records()->firstOrFail();
         $summary = $record->session->customFields()->where('name', 'summary')->firstOrFail();
-        $status = $record->session->customFields()->where('name', 'session_status')->firstOrFail();
-        $date = $record->session->customFields()->where('name', 'real_session_date')->firstOrFail();
 
         Livewire::actingAs($this->mentor())
             ->test(RegisterSession::class, ['record' => $record])
+            ->set('realSessionDate', '2026-07-05')
+            ->set('attendance', 'attended')
+            ->set('modality', 'virtual')
+            ->set('meetingUrl', 'https://zoom.us/j/123')
             ->set("data.field_{$summary->id}", 'Primera sesión muy positiva')
-            ->set("data.field_{$status->id}", 'realizada')
-            ->set("data.field_{$date->id}", '2026-07-05')
             ->call('complete')
             ->assertHasNoErrors();
 
         $record->refresh();
+        // Structured fields persist reliably on the record.
         $this->assertSame(SessionRecord::STATUS_COMPLETED, $record->status);
+        $this->assertSame('attended', $record->attendance);
+        $this->assertSame('virtual', $record->modality);
+        $this->assertSame('2026-07-05', $record->real_session_date->toDateString());
+        $this->assertSame('https://zoom.us/j/123', $record->meeting_url);
         $this->assertNotNull($record->submitted_at);
         $this->assertDatabaseHas('session_record_values', [
             'session_record_id' => $record->id,
             'custom_field_id' => $summary->id,
             'value_text' => 'Primera sesión muy positiva',
         ]);
+    }
+
+    public function test_participant_can_open_session_detail(): void
+    {
+        $assignment = Assignment::where('participant_id', $this->mentee()->id)->firstOrFail();
+        $session = $assignment->program->sessions()->where('number', 1)->firstOrFail();
+
+        $this->actingAs($this->mentee()->fresh())->get("/me/sessions/{$session->getKey()}")
+            ->assertSuccessful()
+            ->assertSee('Ingresar a la sesión')   // Session 1 record has a meeting link
+            ->assertSee('Materiales de la sesión'); // Session 1 has the workbook attached
     }
 
     public function test_welcome_popup_shows_on_first_login_then_is_dismissed(): void

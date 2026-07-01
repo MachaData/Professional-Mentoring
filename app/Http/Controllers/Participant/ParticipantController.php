@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Participant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Assignment;
+use App\Models\Session;
 use App\Models\SessionRecord;
 use App\Services\ResourceResolver;
 use Illuminate\Http\Request;
@@ -60,5 +61,35 @@ class ParticipantController extends Controller
         }
 
         return view('participant.dashboard', compact('participant', 'assignment', 'sessions', 'sidebarTools'));
+    }
+
+    public function session(Request $request, Session $session)
+    {
+        $participant = $request->user();
+
+        $assignment = Assignment::query()
+            ->where('participant_id', $participant->id)
+            ->where('program_id', $session->program_id)
+            ->firstOrFail();
+
+        abort_unless($session->visible_to_participant, 403);
+
+        $record = $assignment->records()->where('session_id', $session->id)->first();
+
+        $visible = collect();
+        if ($record && $record->status === SessionRecord::STATUS_COMPLETED) {
+            $visible = $record->values()->with('customField')->get()
+                ->filter(fn ($v) => $v->customField?->is_visible_to_participant)
+                ->map(fn ($v) => [
+                    'label' => $v->customField->getTranslation('label', app()->getLocale()),
+                    'value' => $v->value_text ?? $v->value_date?->format('d/m/Y') ?? $v->value_number,
+                ])
+                ->filter(fn ($row) => filled($row['value']))
+                ->values();
+        }
+
+        $tools = app(ResourceResolver::class)->sessionTools($session, 'participant');
+
+        return view('participant.session', compact('participant', 'assignment', 'session', 'record', 'visible', 'tools'));
     }
 }

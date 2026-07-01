@@ -24,10 +24,9 @@ class MentoringFieldsSeeder extends Seeder
      */
     protected function baseFields(): array
     {
+        // Note: fecha real, asistencia, modalidad y link de reunión son campos
+        // ESTRUCTURADOS del registro (session_records), no dinámicos.
         return [
-            ['name' => 'real_session_date', 'type' => FieldType::Date, 'es' => 'Fecha real de la sesión', 'en' => 'Actual session date', 'required' => true, 'visible' => true, 'internal' => false],
-            ['name' => 'session_status', 'type' => FieldType::Select, 'es' => 'Estado de la sesión', 'en' => 'Session status', 'required' => true, 'visible' => true, 'internal' => false,
-                'options' => ['realizada' => 'Realizada', 'reprogramada' => 'Reprogramada', 'pendiente' => 'Pendiente']],
             ['name' => 'topic', 'type' => FieldType::Text, 'es' => 'Tema trabajado', 'en' => 'Topic worked on', 'required' => false, 'visible' => true, 'internal' => false],
             ['name' => 'summary', 'type' => FieldType::Textarea, 'es' => 'Resumen de la sesión', 'en' => 'Session summary', 'required' => false, 'visible' => true, 'internal' => false],
             ['name' => 'agreements', 'type' => FieldType::Textarea, 'es' => 'Acuerdos principales', 'en' => 'Key agreements', 'required' => false, 'visible' => true, 'internal' => false],

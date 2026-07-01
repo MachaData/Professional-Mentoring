@@ -66,7 +66,10 @@ class DemoDuplaSeeder extends Seeder
         $firstSession = $program->sessions()->where('number', 1)->first();
         if ($firstSession) {
             $assignment->records()->where('session_id', $firstSession->id)
-                ->update(['meeting_url' => 'https://meet.google.com/abc-defg-hij']);
+                ->update([
+                    'meeting_url' => 'https://meet.google.com/abc-defg-hij',
+                    'modality' => 'virtual',
+                ]);
         }
     }
 }
