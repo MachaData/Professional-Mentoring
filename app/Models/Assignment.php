@@ -8,35 +8,28 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class SessionRecord extends Model
+class Assignment extends Model
 {
     use BelongsToOrganization, HasFactory;
 
-    public const STATUS_PENDING = 'pending';
-    public const STATUS_DRAFT = 'draft';
-    public const STATUS_COMPLETED = 'completed';
-    public const STATUS_RESCHEDULED = 'rescheduled';
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_PAUSED = 'paused';
+    public const STATUS_FINISHED = 'finished';
     public const STATUS_CANCELLED = 'cancelled';
-    public const STATUS_EXPIRED = 'expired';
 
     protected $guarded = ['id'];
 
     protected function casts(): array
     {
         return [
-            'real_session_date' => 'date',
-            'submitted_at' => 'datetime',
+            'start_date' => 'date',
+            'end_date' => 'date',
         ];
     }
 
-    public function assignment(): BelongsTo
+    public function program(): BelongsTo
     {
-        return $this->belongsTo(Assignment::class);
-    }
-
-    public function session(): BelongsTo
-    {
-        return $this->belongsTo(Session::class);
+        return $this->belongsTo(Program::class);
     }
 
     public function facilitator(): BelongsTo
@@ -49,8 +42,8 @@ class SessionRecord extends Model
         return $this->belongsTo(User::class, 'participant_id');
     }
 
-    public function values(): HasMany
+    public function records(): HasMany
     {
-        return $this->hasMany(SessionRecordValue::class);
+        return $this->hasMany(SessionRecord::class);
     }
 }

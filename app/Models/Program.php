@@ -52,6 +52,11 @@ class Program extends Model
         return $this->hasMany(Session::class)->orderBy('sort_order');
     }
 
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(Assignment::class);
+    }
+
     /**
      * Visible facilitator label: program override → program type → fallback.
      */

@@ -40,6 +40,10 @@ Panel admin: `http://localhost:8000/admin`
 |-----|-------|----------|
 | Superadministrador | `superadmin@pro-mentoring.com` | `password` |
 | Admin de organización | `admin@crosspartnersgroup.com` | `password` |
+| Mentor (demo) | `mentor@demo.test` | `password` |
+| Mentee (demo) | `mentee@demo.test` | `password` |
+
+Panel admin en `/admin`; portales mentor/mentee en `/login`.
 
 ## Tests
 ```bash
@@ -60,7 +64,12 @@ La suite usa PostgreSQL (la app depende de operadores JSON de Postgres).
       dinámico que renderiza el formulario y persiste respuestas en columnas
       tipadas (`session_records` / `session_record_values`). Seeder con los 9 campos
       base de registro de mentoring en cada sesión de Las Bambas. Todo editable.
-- [ ] Fase 4 — Asignaciones, invitaciones por correo, portales mentor/mentee.
+- [x] **Fase 4 — Asignaciones, invitaciones y portales:** asignación mentor↔mentee
+      con aprovisionamiento automático de registros de sesión; invitación por correo
+      con contraseña temporal + cambio obligatorio al primer ingreso (con log de
+      envíos); portal del mentor (dashboard, participantes, registro de sesión con
+      formulario dinámico en Livewire) y portal del mentee (programa, mentor,
+      sesiones y acuerdos visibles). Login branded y control de acceso por rol.
 - [ ] Fase 5 — Herramientas, materiales y encuestas.
 - [ ] Fase 6 — Plantillas de correo y recordatorios programados.
 - [ ] Fase 7 — Dashboards, reportes y export/import Excel.

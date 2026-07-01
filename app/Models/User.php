@@ -7,6 +7,7 @@ use Filament\Models\Contracts\HasName;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -42,6 +43,16 @@ class User extends Authenticatable implements FilamentUser, HasName
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function assignmentsAsFacilitator(): HasMany
+    {
+        return $this->hasMany(Assignment::class, 'facilitator_id');
+    }
+
+    public function assignmentsAsParticipant(): HasMany
+    {
+        return $this->hasMany(Assignment::class, 'participant_id');
     }
 
     // ---- Role helpers -------------------------------------------------
