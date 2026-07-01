@@ -23,12 +23,10 @@ class ParticipantController extends Controller
 
         $sessions = collect();
         $sidebarTools = new Collection;
-        $sidebarSurveys = new Collection;
 
         if ($assignment) {
             $resolver = app(ResourceResolver::class);
             $sidebarTools = $resolver->programTools($assignment->program, 'participant');
-            $sidebarSurveys = $resolver->programSurveys($assignment->program, 'participant');
 
             $records = $assignment->records->keyBy('session_id');
 
@@ -55,12 +53,12 @@ class ParticipantController extends Controller
                         'record' => $record,
                         'visible_values' => $visible,
                         'meeting_url' => $record?->meeting_url,
+                        'survey_url' => $session->survey_url,
                         'tools' => $resolver->sessionTools($session, 'participant'),
-                        'surveys' => $resolver->sessionSurveys($session, 'participant'),
                     ];
                 });
         }
 
-        return view('participant.dashboard', compact('participant', 'assignment', 'sessions', 'sidebarTools', 'sidebarSurveys'));
+        return view('participant.dashboard', compact('participant', 'assignment', 'sessions', 'sidebarTools'));
     }
 }

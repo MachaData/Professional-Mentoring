@@ -89,7 +89,8 @@
                                 @include('partials.session-resources', [
                                     'meetingUrl' => $row['meeting_url'],
                                     'sessTools' => $row['tools'],
-                                    'sessSurveys' => $row['surveys'],
+                                    'surveyUrl' => $row['survey_url'],
+                                    'mode' => 'mentor',
                                 ])
                             </div>
                         </div>
@@ -99,6 +100,6 @@
         @endforeach
     </div>
 
-    @include('partials.resource-sidebar', ['sidebarTools' => $sidebarTools, 'sidebarSurveys' => $sidebarSurveys])
+    @include('partials.resource-sidebar', ['sidebarTools' => $sidebarTools])
 </div>
 @endsection

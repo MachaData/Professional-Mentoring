@@ -59,16 +59,15 @@ class MentorController extends Controller
                 'record' => $record,
                 'status' => $record ? $this->effectiveStatus($record, $assignment) : SessionRecord::STATUS_PENDING,
                 'meeting_url' => $record?->meeting_url,
+                'survey_url' => $session->survey_url,
                 'tools' => $resolver->sessionTools($session, 'facilitator'),
-                'surveys' => $resolver->sessionSurveys($session, 'facilitator'),
             ];
         });
 
-        // Program-wide resources for the right sidebar.
+        // Program-wide materials for the right sidebar (surveys live per session).
         $sidebarTools = $resolver->programTools($assignment->program, 'facilitator');
-        $sidebarSurveys = $resolver->programSurveys($assignment->program, 'facilitator');
 
-        return view('mentor.participant', compact('assignment', 'sessions', 'sidebarTools', 'sidebarSurveys'));
+        return view('mentor.participant', compact('assignment', 'sessions', 'sidebarTools'));
     }
 
     /** A pending/draft record whose session window has passed is "expired". */

@@ -113,6 +113,22 @@ class PortalTest extends TestCase
             ->assertSee('meet.google.com');
     }
 
+    public function test_participant_sees_per_session_survey(): void
+    {
+        $this->actingAs($this->mentee()->fresh())->get('/me')
+            ->assertSee('Abrir encuesta')
+            ->assertSee('forms.gle');
+    }
+
+    public function test_mentor_sees_copy_survey_button(): void
+    {
+        $assignment = Assignment::where('facilitator_id', $this->mentor()->id)->firstOrFail();
+
+        $this->actingAs($this->mentor())->get("/mentor/participants/{$assignment->id}")
+            ->assertSee('Copiar encuesta')
+            ->assertSee('Abrir encuesta');
+    }
+
     public function test_completed_visible_fields_appear_on_participant_dashboard(): void
     {
         $assignment = Assignment::where('participant_id', $this->mentee()->id)->firstOrFail();

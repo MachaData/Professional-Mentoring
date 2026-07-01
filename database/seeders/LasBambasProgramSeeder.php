@@ -143,6 +143,8 @@ class LasBambasProgramSeeder extends Seeder
                 'number' => $number,
                 'name' => ['es' => "Sesión {$number}", 'en' => "Session {$number}"],
                 'objective' => ['es' => $objEs, 'en' => $objEn],
+                // Demo per-session survey link (editable per session in the panel).
+                'survey_url' => 'https://forms.gle/KRJzeGAvUAvaaomD6',
                 'start_date' => $start,
                 'end_date' => $end,
                 'sort_order' => $number,

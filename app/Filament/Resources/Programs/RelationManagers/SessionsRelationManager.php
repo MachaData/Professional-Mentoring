@@ -43,6 +43,8 @@ class SessionsRelationManager extends RelationManager
                         TextInput::make('name.en')->label('Name (EN)')->required(),
                         Textarea::make('objective.es')->label('Objetivo (ES)')->rows(2),
                         Textarea::make('objective.en')->label('Objective (EN)')->rows(2),
+                        TextInput::make('survey_url')->label('Link de encuesta')->url()
+                            ->placeholder('https://forms.gle/…')->columnSpanFull(),
                     ]),
                 Section::make('Configuración')
                     ->columns(2)

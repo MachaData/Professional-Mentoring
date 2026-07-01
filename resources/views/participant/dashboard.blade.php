@@ -74,7 +74,8 @@
                         @include('partials.session-resources', [
                             'meetingUrl' => $row['meeting_url'],
                             'sessTools' => $row['tools'],
-                            'sessSurveys' => $row['surveys'],
+                            'surveyUrl' => $row['survey_url'],
+                            'mode' => 'mentee',
                         ])
 
                         @if($row['visible_values']->isNotEmpty())
@@ -95,7 +96,7 @@
             </div>
         </div>
 
-        @include('partials.resource-sidebar', ['sidebarTools' => $sidebarTools, 'sidebarSurveys' => $sidebarSurveys])
+        @include('partials.resource-sidebar', ['sidebarTools' => $sidebarTools])
     </div>
 @endif
 @endsection
