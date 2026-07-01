@@ -23,9 +23,21 @@ class AdminSmokeTest extends TestCase
             '/admin/program-types', '/admin/program-types/create',
             '/admin/clients', '/admin/clients/create',
             '/admin/programs', '/admin/programs/create',
+            '/admin/sessions', '/admin/sessions/create',
+            '/admin/form-templates', '/admin/form-templates/create',
         ] as $url) {
             $this->actingAs($u)->get($url)->assertSuccessful();
         }
+    }
+
+    public function test_session_and_template_field_managers_render(): void
+    {
+        $u = User::where('email', 'superadmin@pro-mentoring.com')->firstOrFail();
+        $session = \App\Models\Session::firstOrFail();
+        $template = \App\Models\FormTemplate::firstOrFail();
+
+        $this->actingAs($u)->get("/admin/sessions/{$session->getKey()}/edit")->assertSuccessful();
+        $this->actingAs($u)->get("/admin/form-templates/{$template->getKey()}/edit")->assertSuccessful();
     }
 
     public function test_program_edit_with_relation_managers_renders(): void

@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             CrossPartnersSeeder::class,
             LasBambasProgramSeeder::class,
+            MentoringFieldsSeeder::class,
         ]);
     }
 }

@@ -55,7 +55,11 @@ La suite usa PostgreSQL (la app depende de operadores JSON de Postgres).
       con etapas y sesiones reordenables (relation managers), labels de rol
       heredados del tipo, y seeder del programa Las Bambas (4 etapas, 10 sesiones
       con fechas reales jun-2026 → abr-2027). Todo editable.
-- [ ] Fase 3 — Campos dinámicos, plantillas de formulario y registro de sesiones.
+- [x] **Fase 3 — Campos dinámicos y plantillas:** definición de campos por sesión
+      o plantilla (15 tipos: texto, fecha, select, rating, archivo, etc.), builder
+      dinámico que renderiza el formulario y persiste respuestas en columnas
+      tipadas (`session_records` / `session_record_values`). Seeder con los 9 campos
+      base de registro de mentoring en cada sesión de Las Bambas. Todo editable.
 - [ ] Fase 4 — Asignaciones, invitaciones por correo, portales mentor/mentee.
 - [ ] Fase 5 — Herramientas, materiales y encuestas.
 - [ ] Fase 6 — Plantillas de correo y recordatorios programados.

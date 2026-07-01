@@ -60,7 +60,7 @@ class ProgramForm
                         Select::make('program_type_id')
                             ->label('Tipo de programa')
                             ->relationship('programType', 'id')
-                            ->getOptionLabelFromRecordUsing(fn (ProgramType $r) => $r->getTranslation('name', app()->getLocale()))
+                            ->getOptionLabelFromRecordUsing(fn (?ProgramType $record) => $record?->getTranslation('name', app()->getLocale()))
                             ->searchable()->preload()
                             ->live()
                             ->afterStateUpdated(function ($state, callable $set) {
