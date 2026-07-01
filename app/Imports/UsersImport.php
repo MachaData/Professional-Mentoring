@@ -21,6 +21,21 @@ class UsersImport implements ToCollection, WithHeadingRow
 
     public function __construct(protected int $organizationId) {}
 
+    /** Human column headers (slug to the keys read below). @return array<int,string> */
+    public static function templateHeadings(): array
+    {
+        return ['Nombre', 'Correo', 'Celular', 'Rol', 'Cargo', 'Area', 'Unidad Negocio', 'Empresa', 'Zona Horaria', 'Idioma'];
+    }
+
+    /** @return array<int,array<int,string>> */
+    public static function templateExample(): array
+    {
+        return [
+            ['Ana Pérez', 'ana.perez@ejemplo.com', '+51 999 111 222', 'Mentor', 'Gerente', 'Operaciones', 'Mina', 'Las Bambas', 'America/Lima', 'es'],
+            ['Luis Gómez', 'luis.gomez@ejemplo.com', '+51 999 333 444', 'Mentee', 'Analista', 'Finanzas', 'Corporativo', 'Las Bambas', 'America/Lima', 'es'],
+        ];
+    }
+
     public function collection(\Illuminate\Support\Collection $rows): void
     {
         foreach ($rows as $row) {

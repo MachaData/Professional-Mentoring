@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Pages;
 
+use App\Exports\ImportTemplateExport;
 use App\Exports\UsersExport;
 use App\Filament\Resources\Users\UserResource;
 use App\Imports\UsersImport;
@@ -35,11 +36,20 @@ class ListUsers extends ListRecords
                     'usuarios.xlsx'
                 )),
 
+            Action::make('downloadTemplate')
+                ->label('Descargar plantilla')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('gray')
+                ->action(fn () => Excel::download(
+                    new ImportTemplateExport(UsersImport::templateHeadings(), UsersImport::templateExample()),
+                    'plantilla-usuarios.xlsx'
+                )),
+
             Action::make('import')
                 ->label('Importar Excel')
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('info')
-                ->modalDescription('Columnas: nombre, correo, celular, rol, cargo, area, unidad_negocio, empresa, zona_horaria, idioma')
+                ->modalDescription('Sube el archivo con las columnas de la plantilla. Descárgala con el botón "Descargar plantilla".')
                 ->form([
                     FileUpload::make('file')
                         ->label('Archivo Excel')

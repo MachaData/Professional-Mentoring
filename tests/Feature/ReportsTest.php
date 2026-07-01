@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Exports\ImportTemplateExport;
 use App\Exports\ProgramProgressExport;
 use App\Imports\AssignmentsImport;
 use App\Imports\UsersImport;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Assignment;
 use App\Models\Program;
 use App\Models\SessionRecord;
@@ -73,6 +75,27 @@ class ReportsTest extends TestCase
         $this->assertSame(User::ROLE_FACILITATOR, User::where('email', 'nuevo.mentor@test.com')->value('role'));
         $this->assertSame(User::ROLE_PARTICIPANT, User::where('email', 'nueva.mentee@test.com')->value('role'));
         $this->assertTrue((bool) User::where('email', 'nuevo.mentor@test.com')->value('must_change_password'));
+    }
+
+    public function test_users_template_round_trips_through_the_importer(): void
+    {
+        // Generate the downloadable template, then import it back.
+        Excel::store(
+            new ImportTemplateExport(UsersImport::templateHeadings(), UsersImport::templateExample()),
+            'test-plantilla-usuarios.xlsx',
+            'local'
+        );
+        $path = \Illuminate\Support\Facades\Storage::disk('local')->path('test-plantilla-usuarios.xlsx');
+
+        $import = new UsersImport(1);
+        Excel::import($import, $path);
+
+        @unlink($path);
+
+        // The two example rows become a facilitator and a participant.
+        $this->assertSame(2, $import->imported);
+        $this->assertSame(User::ROLE_FACILITATOR, User::where('email', 'ana.perez@ejemplo.com')->value('role'));
+        $this->assertSame(User::ROLE_PARTICIPANT, User::where('email', 'luis.gomez@ejemplo.com')->value('role'));
     }
 
     public function test_assignments_import_creates_dupla_and_provisions_records(): void

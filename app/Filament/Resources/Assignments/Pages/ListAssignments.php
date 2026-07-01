@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Assignments\Pages;
 
+use App\Exports\ImportTemplateExport;
 use App\Filament\Resources\Assignments\AssignmentResource;
 use App\Imports\AssignmentsImport;
 use App\Models\Organization;
@@ -25,11 +26,20 @@ class ListAssignments extends ListRecords
         return [
             CreateAction::make(),
 
+            Action::make('downloadTemplate')
+                ->label('Descargar plantilla')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('gray')
+                ->action(fn () => Excel::download(
+                    new ImportTemplateExport(AssignmentsImport::templateHeadings(), AssignmentsImport::templateExample()),
+                    'plantilla-asignaciones.xlsx'
+                )),
+
             Action::make('import')
                 ->label('Importar Excel')
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('info')
-                ->modalDescription('Columnas: correo_facilitador, correo_participante, programa (slug), fecha_inicio')
+                ->modalDescription('Sube el archivo con las columnas de la plantilla. Descárgala con el botón "Descargar plantilla".')
                 ->form([
                     FileUpload::make('file')
                         ->label('Archivo Excel')

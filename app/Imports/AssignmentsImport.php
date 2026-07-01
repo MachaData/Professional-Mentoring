@@ -22,6 +22,20 @@ class AssignmentsImport implements ToCollection, WithHeadingRow
 
     public function __construct(protected int $organizationId) {}
 
+    /** @return array<int,string> */
+    public static function templateHeadings(): array
+    {
+        return ['Correo Facilitador', 'Correo Participante', 'Programa', 'Fecha Inicio'];
+    }
+
+    /** @return array<int,array<int,string>> */
+    public static function templateExample(): array
+    {
+        return [
+            ['ana.perez@ejemplo.com', 'luis.gomez@ejemplo.com', 'professional-mentoring-las-bambas', '2026-06-23'],
+        ];
+    }
+
     public function collection(\Illuminate\Support\Collection $rows): void
     {
         $provisioner = app(SessionRecordProvisioner::class);
