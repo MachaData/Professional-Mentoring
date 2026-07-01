@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             LasBambasProgramSeeder::class,
             MentoringFieldsSeeder::class,
             ResourcesSeeder::class,
+            CommunicationsSeeder::class,
             DemoDuplaSeeder::class,
         ]);
     }

@@ -76,7 +76,11 @@ La suite usa PostgreSQL (la app depende de operadores JSON de Postgres).
       visualización. `ResourceResolver` filtra por rol y los recursos aparecen en
       los portales de mentor y mentee. Seeder con el workbook, la guía y la encuesta
       de satisfacción de Las Bambas.
-- [ ] Fase 6 — Plantillas de correo y recordatorios programados.
+- [x] **Fase 6 — Comunicaciones:** plantillas de correo **editables** (asunto y
+      cuerpo ES/EN con variables `{{...}}`), recordatorios programables relativos a
+      la ventana de cada sesión (N días antes/después del inicio/fin) por
+      destinatario, comando `reminders:dispatch` (scheduler diario) idempotente con
+      registro en `email_logs`, y las invitaciones usan la plantilla editable.
 - [ ] Fase 7 — Dashboards, reportes y export/import Excel.
 - [ ] Fase 8 — i18n ES/EN y despliegue (Railway / DigitalOcean).
 

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Mail\WelcomeInvitationMail;
+use App\Mail\TemplatedMail;
 use App\Models\Assignment;
 use App\Models\Program;
 use App\Models\User;
@@ -38,7 +38,8 @@ class InvitationTest extends TestCase
         $this->assertSame('sent', $user->invitation_status);
         $this->assertNotSame($originalHash, $user->password);
 
-        Mail::assertSent(WelcomeInvitationMail::class, fn ($m) => $m->hasTo($user->email));
+        // With a seeded "invitation" template, the editable copy drives the email.
+        Mail::assertSent(TemplatedMail::class, fn ($m) => $m->hasTo($user->email));
 
         $this->assertDatabaseHas('email_logs', [
             'user_id' => $user->id,

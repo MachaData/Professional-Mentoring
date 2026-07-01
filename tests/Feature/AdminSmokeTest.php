@@ -25,6 +25,11 @@ class AdminSmokeTest extends TestCase
             '/admin/programs', '/admin/programs/create',
             '/admin/sessions', '/admin/sessions/create',
             '/admin/form-templates', '/admin/form-templates/create',
+            '/admin/assignments', '/admin/assignments/create',
+            '/admin/tools', '/admin/tools/create',
+            '/admin/surveys', '/admin/surveys/create',
+            '/admin/email-templates', '/admin/email-templates/create',
+            '/admin/reminders', '/admin/reminders/create',
         ] as $url) {
             $this->actingAs($u)->get($url)->assertSuccessful();
         }
