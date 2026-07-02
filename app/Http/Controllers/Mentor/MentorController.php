@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mentor;
 use App\Http\Controllers\Controller;
 use App\Models\Assignment;
 use App\Models\SessionRecord;
+use App\Services\CalendarService;
 use App\Services\ResourceResolver;
 use Illuminate\Http\Request;
 
@@ -77,6 +78,71 @@ class MentorController extends Controller
         $assignment->load('participant', 'program');
 
         return view('mentor.space', compact('assignment'));
+    }
+
+    public function calendar(Request $request, CalendarService $calendar)
+    {
+        $facilitator = $request->user();
+
+        $assignments = Assignment::query()
+            ->where('facilitator_id', $facilitator->id)
+            ->with(['participant:id,name', 'program.sessions', 'records'])
+            ->get();
+
+        // Calendar events: the program schedule (dedup sessions shared by duplas),
+        // tinted by their window. Per-dupla progress lives in the table below.
+        $sessions = $assignments
+            ->flatMap(fn ($a) => $a->program->sessions)
+            ->unique('id')
+            ->sortBy('sort_order')
+            ->values();
+
+        $month = $calendar->month($request->query('m'));
+        $events = $calendar->events($sessions);
+
+        // Basic indicators — one row per dupla.
+        $rows = $assignments->map(function (Assignment $assignment) {
+            $sessions = $assignment->program->sessions->sortBy('sort_order')->values();
+            $recordsBySession = $assignment->records->keyBy('session_id');
+            $total = $sessions->count();
+
+            $completed = 0;
+            $current = null;
+            foreach ($sessions as $session) {
+                $record = $recordsBySession->get($session->id);
+                if ($record && $record->status === SessionRecord::STATUS_COMPLETED) {
+                    $completed++;
+                } elseif ($current === null) {
+                    $current = $session;
+                }
+            }
+
+            $overdue = $current && $current->end_date && $current->end_date->isPast();
+            $state = $completed === $total ? 'done' : ($completed === 0 ? 'sin_inicio' : ($overdue ? 'fuera' : 'dentro'));
+
+            return [
+                'assignment' => $assignment,
+                'total' => $total,
+                'completed' => $completed,
+                'percent' => $total ? (int) round($completed / $total * 100) : 0,
+                'current' => $current,
+                'state' => $state,
+            ];
+        });
+
+        [$prevUrl, $nextUrl, $todayUrl] = $this->monthLinks('mentor.calendar', $month);
+
+        return view('mentor.calendar', compact('facilitator', 'month', 'events', 'rows', 'prevUrl', 'nextUrl', 'todayUrl'));
+    }
+
+    /** @return array{0:string,1:string,2:string} prev, next, today month URLs */
+    protected function monthLinks(string $route, \Illuminate\Support\Carbon $month): array
+    {
+        return [
+            route($route, ['m' => $month->copy()->subMonthNoOverflow()->format('Y-m')]),
+            route($route, ['m' => $month->copy()->addMonthNoOverflow()->format('Y-m')]),
+            route($route),
+        ];
     }
 
     public function register(Request $request, SessionRecord $record)

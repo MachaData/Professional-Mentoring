@@ -4,9 +4,17 @@
 @section('content')
 @php $locale = app()->getLocale(); @endphp
 
-<div class="mb-8">
-    <p class="text-sm font-medium text-brand-600">{{ __('Mi programa') }}</p>
-    <h1 class="mt-1 text-3xl font-bold">{{ __('Hola') }}, {{ explode(' ', $participant->name)[0] }} 👋</h1>
+<div class="mb-8 flex flex-wrap items-end justify-between gap-3">
+    <div>
+        <p class="text-sm font-medium text-brand-600">{{ __('Mi programa') }}</p>
+        <h1 class="mt-1 text-3xl font-bold">{{ __('Hola') }}, {{ explode(' ', $participant->name)[0] }} 👋</h1>
+    </div>
+    @if($assignment)
+        <a href="{{ route('participant.calendar') }}" class="pm-btn-ghost">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+            {{ __('Cronograma') }}
+        </a>
+    @endif
 </div>
 
 @if(! $assignment)

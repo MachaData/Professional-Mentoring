@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Assignment;
 use App\Models\Session;
 use App\Models\SessionRecord;
+use App\Services\CalendarService;
 use App\Services\ResourceResolver;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class ParticipantController extends Controller
@@ -72,6 +74,66 @@ class ParticipantController extends Controller
             ->firstOrFail();
 
         return view('participant.space', compact('assignment'));
+    }
+
+    public function calendar(Request $request, CalendarService $calendar)
+    {
+        $participant = $request->user();
+
+        $assignment = Assignment::query()
+            ->where('participant_id', $participant->id)
+            ->with(['program.sessions', 'records'])
+            ->latest()
+            ->first();
+
+        $month = $calendar->month($request->query('m'));
+        $events = [];
+        $stats = ['total' => 0, 'completed' => 0, 'pending' => 0, 'expired' => 0];
+        $next = null;
+
+        if ($assignment) {
+            $today = Carbon::today();
+            $records = $assignment->records->keyBy('session_id');
+
+            $sessions = $assignment->program->sessions
+                ->where('visible_to_participant', true)
+                ->sortBy('sort_order')
+                ->values();
+
+            $statusBySession = $sessions
+                ->mapWithKeys(fn ($s) => [$s->id => $records->get($s->id)?->status ?? SessionRecord::STATUS_PENDING])
+                ->all();
+
+            $events = $calendar->events(
+                $sessions,
+                $statusBySession,
+                fn ($session) => route('participant.session', $session),
+            );
+
+            $stats['total'] = $sessions->count();
+            foreach ($sessions as $session) {
+                $status = $statusBySession[$session->id];
+                if ($status === SessionRecord::STATUS_COMPLETED) {
+                    $stats['completed']++;
+                } elseif ($session->end_date && $session->end_date->lt($today)) {
+                    $stats['expired']++;
+                } else {
+                    $stats['pending']++;
+                    // First upcoming, not-completed session with a start date.
+                    if (! $next && $session->start_date) {
+                        $next = $session;
+                    }
+                }
+            }
+        }
+
+        [$prevUrl, $nextUrl, $todayUrl] = [
+            route('participant.calendar', ['m' => $month->copy()->subMonthNoOverflow()->format('Y-m')]),
+            route('participant.calendar', ['m' => $month->copy()->addMonthNoOverflow()->format('Y-m')]),
+            route('participant.calendar'),
+        ];
+
+        return view('participant.calendar', compact('participant', 'assignment', 'month', 'events', 'stats', 'next', 'prevUrl', 'nextUrl', 'todayUrl'));
     }
 
     public function session(Request $request, Session $session)
