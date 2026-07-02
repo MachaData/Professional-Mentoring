@@ -49,6 +49,7 @@ Route::middleware(['auth', 'password.changed', 'role:facilitator'])
     ->prefix('mentor')->group(function () {
         Route::get('/', [MentorController::class, 'dashboard'])->name('mentor.dashboard');
         Route::get('/participants/{assignment}', [MentorController::class, 'participant'])->name('mentor.participant');
+        Route::get('/participants/{assignment}/espacio', [MentorController::class, 'space'])->name('mentor.space');
         Route::get('/records/{record}/register', [MentorController::class, 'register'])->name('mentor.register');
     });
 
@@ -56,5 +57,6 @@ Route::middleware(['auth', 'password.changed', 'role:facilitator'])
 Route::middleware(['auth', 'password.changed', 'role:participant'])
     ->prefix('me')->group(function () {
         Route::get('/', [ParticipantController::class, 'dashboard'])->name('participant.dashboard');
+        Route::get('/espacio', [ParticipantController::class, 'space'])->name('participant.space');
         Route::get('/sessions/{session}', [ParticipantController::class, 'session'])->name('participant.session');
     });

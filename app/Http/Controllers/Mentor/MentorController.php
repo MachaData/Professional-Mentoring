@@ -70,6 +70,15 @@ class MentorController extends Controller
         return view('mentor.participant', compact('assignment', 'sessions', 'sidebarTools'));
     }
 
+    public function space(Request $request, Assignment $assignment)
+    {
+        abort_unless($assignment->facilitator_id === $request->user()->id, 403);
+
+        $assignment->load('participant', 'program');
+
+        return view('mentor.space', compact('assignment'));
+    }
+
     public function register(Request $request, SessionRecord $record)
     {
         abort_unless($record->facilitator_id === $request->user()->id, 403);

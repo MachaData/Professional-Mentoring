@@ -46,6 +46,8 @@ class AssignmentResource extends Resource
     {
         return [
             RelationManagers\RecordsRelationManager::class,
+            RelationManagers\FilesRelationManager::class,
+            RelationManagers\MessagesRelationManager::class,
         ];
     }
 

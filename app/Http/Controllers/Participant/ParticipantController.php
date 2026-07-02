@@ -63,6 +63,17 @@ class ParticipantController extends Controller
         return view('participant.dashboard', compact('participant', 'assignment', 'sessions', 'sidebarTools'));
     }
 
+    public function space(Request $request)
+    {
+        $assignment = Assignment::query()
+            ->where('participant_id', $request->user()->id)
+            ->with('facilitator', 'program')
+            ->latest()
+            ->firstOrFail();
+
+        return view('participant.space', compact('assignment'));
+    }
+
     public function session(Request $request, Session $session)
     {
         $participant = $request->user();

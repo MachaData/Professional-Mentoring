@@ -46,4 +46,20 @@ class Assignment extends Model
     {
         return $this->hasMany(SessionRecord::class);
     }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(SharedFile::class)->latest();
+    }
+
+    public function messages(): HasMany
+    {
+        return $this->hasMany(Message::class)->oldest();
+    }
+
+    /** Is this user part of the dupla? */
+    public function involves(User $user): bool
+    {
+        return in_array($user->id, [$this->facilitator_id, $this->participant_id], true);
+    }
 }

@@ -84,5 +84,26 @@ class DemoDuplaSeeder extends Seeder
                     'modality' => 'virtual',
                 ]);
         }
+
+        // Demo mailbox + shared file for the dupla space.
+        if ($assignment->messages()->count() === 0) {
+            $assignment->messages()->create([
+                'organization_id' => $org->id, 'sender_id' => $mentor->id,
+                'body' => '¡Hola! Bienvenido al programa. Cualquier duda, escríbeme por aquí.',
+                'read_at' => now(),
+            ]);
+            $assignment->messages()->create([
+                'organization_id' => $org->id, 'sender_id' => $mentee->id,
+                'body' => 'Gracias, Eduardo. Quedo atento a la primera sesión.',
+            ]);
+        }
+        if ($assignment->files()->count() === 0) {
+            $assignment->files()->create([
+                'organization_id' => $org->id, 'uploaded_by' => $mentor->id,
+                'session_id' => $firstSession?->id,
+                'title' => 'Agenda de la primera sesión', 'type' => 'text',
+                'body_text' => 'Preparar una breve presentación personal y tus expectativas del programa.',
+            ]);
+        }
     }
 }
