@@ -24,6 +24,8 @@ class Reports extends Page
 
     public Collection $sessionProgress;
     public Collection $duplas;
+    /** @var array<int,array{label:string,order:int,count:int,duplas:Collection}> */
+    public array $currentGroups = [];
     /** @var array<string,int> */
     public array $counts = [];
 
@@ -43,6 +45,8 @@ class Reports extends Page
     {
         $report = ReportService::forUser(auth()->user());
 
+        $locale = app()->getLocale();
+
         $this->sessionProgress = $report->progressBySession();
         $this->duplas = $report->duplasBySchedule();
         $this->counts = [
@@ -50,6 +54,25 @@ class Reports extends Page
             'fuera' => $this->duplas->where('category', 'fuera')->count(),
             'sin_inicio' => $this->duplas->where('category', 'sin_inicio')->count(),
         ];
+
+        // Report #1: duplas grouped by the session they are currently on.
+        $this->currentGroups = $this->duplas
+            ->groupBy(fn ($row) => $row['current']?->id ?? 'done')
+            ->map(function ($rows) use ($locale) {
+                $current = $rows->first()['current'];
+
+                return [
+                    'label' => $current
+                        ? 'S'.$current->number.' · '.$current->getTranslation('name', $locale)
+                        : 'Finalizado',
+                    'order' => $current?->sort_order ?? 9999,
+                    'count' => $rows->count(),
+                    'duplas' => $rows->values(),
+                ];
+            })
+            ->sortBy('order')
+            ->values()
+            ->all();
     }
 
     public function duplasIn(string $category): Collection

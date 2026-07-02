@@ -156,42 +156,93 @@ class ReportService
     }
 
     /**
-     * Classifies every dupla by schedule state.
-     *  - sin_inicio: no completed sessions yet
-     *  - fuera: has at least one overdue (expired) session
-     *  - dentro: started and with no overdue sessions
+     * The session a program "should" be on today per its calendar: the latest
+     * session whose start date has arrived (or the first if it hasn't started).
      *
-     * @return Collection<int,array{assignment:Assignment,total:int,completed:int,expired:int,percent:int,category:string}>
+     * @param  Collection<int,Session>  $sessions  ordered by sort_order
+     */
+    protected function expectedSession(Collection $sessions, Carbon $today): ?Session
+    {
+        $expected = $sessions->first();
+        foreach ($sessions as $session) {
+            if ($session->start_date && $session->start_date->lte($today)) {
+                $expected = $session;
+            }
+        }
+
+        return $expected;
+    }
+
+    /**
+     * Classifies every dupla by schedule state and enriches it with its current
+     * session, the expected session per the calendar and the days behind.
+     *
+     *  - sin_inicio: no completed sessions yet
+     *  - fuera: behind schedule (overdue current session or below the expected one)
+     *  - dentro: started and on schedule
+     *
+     * @return Collection<int,array<string,mixed>>
      */
     public function duplasBySchedule(): Collection
     {
         $today = Carbon::today();
 
-        return $this->scope(Assignment::query())
-            ->with(['facilitator:id,name', 'participant:id,name', 'program:id,name', 'records.session:id,end_date'])
-            ->get()
-            ->map(function (Assignment $assignment) use ($today) {
-                $completed = $expired = 0;
+        // Ordered sessions + expected-session per program (computed once).
+        $programSessions = $this->scope(Session::query())
+            ->get(['id', 'program_id', 'number', 'name', 'sort_order', 'start_date', 'end_date'])
+            ->sortBy('sort_order')
+            ->groupBy('program_id');
 
-                foreach ($assignment->records as $record) {
-                    if ($record->status === SessionRecord::STATUS_COMPLETED) {
+        $expectedByProgram = $programSessions->map(fn ($sessions) => $this->expectedSession($sessions->values(), $today));
+
+        return $this->scope(Assignment::query())
+            ->with(['facilitator:id,name', 'participant:id,name', 'program:id,name', 'records'])
+            ->get()
+            ->map(function (Assignment $assignment) use ($today, $programSessions, $expectedByProgram) {
+                $sessions = ($programSessions[$assignment->program_id] ?? collect())->values();
+                $recordsBySession = $assignment->records->keyBy('session_id');
+
+                $completed = 0;
+                $current = null; // first session not completed = where the dupla is
+
+                foreach ($sessions as $session) {
+                    $record = $recordsBySession->get($session->id);
+                    if ($record && $record->status === SessionRecord::STATUS_COMPLETED) {
                         $completed++;
-                    } elseif (in_array($record->status, [SessionRecord::STATUS_PENDING, SessionRecord::STATUS_DRAFT], true)
-                        && $record->session?->end_date && $record->session->end_date->lt($today)) {
-                        $expired++;
+                    } elseif ($current === null) {
+                        $current = $session;
                     }
                 }
 
-                $total = $assignment->records->count();
-                $category = $completed === 0 ? 'sin_inicio' : ($expired > 0 ? 'fuera' : 'dentro');
+                $total = $sessions->count();
+                $expected = $expectedByProgram[$assignment->program_id] ?? null;
+
+                // Days behind: how long the current session's window has been closed.
+                $daysBehind = 0;
+                if ($current && $current->end_date && $current->end_date->lt($today)) {
+                    $daysBehind = $current->end_date->diffInDays($today);
+                }
+
+                $behind = $daysBehind > 0
+                    || ($current && $expected && $current->sort_order < $expected->sort_order);
+
+                if ($completed === $total) {
+                    $category = 'dentro'; // finished
+                } elseif ($completed === 0) {
+                    $category = 'sin_inicio';
+                } else {
+                    $category = $behind ? 'fuera' : 'dentro';
+                }
 
                 return [
                     'assignment' => $assignment,
                     'total' => $total,
                     'completed' => $completed,
-                    'expired' => $expired,
                     'percent' => $total ? (int) round($completed / $total * 100) : 0,
                     'category' => $category,
+                    'current' => $current,               // Session|null (null = finished)
+                    'expected' => $expected,             // Session|null
+                    'days_behind' => (int) $daysBehind,
                 ];
             });
     }

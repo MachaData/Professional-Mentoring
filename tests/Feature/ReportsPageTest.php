@@ -63,6 +63,9 @@ class ReportsPageTest extends TestCase
         $duplas = (new ReportService(1))->duplasBySchedule();
         $row = $duplas->firstWhere('assignment.id', $assignment->id);
         $this->assertSame('fuera', $row['category']);
-        $this->assertGreaterThanOrEqual(1, $row['expired']);
+        $this->assertGreaterThanOrEqual(1, $row['days_behind']);
+        // Current session is S2 (first not completed) after completing S1.
+        $this->assertSame(2, $row['current']->number);
+        $this->assertNotNull($row['expected']);
     }
 }

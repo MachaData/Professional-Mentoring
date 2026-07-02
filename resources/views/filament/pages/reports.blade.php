@@ -6,49 +6,35 @@
 <x-filament-panels::page>
     <div class="space-y-8">
 
-        {{-- ============ AVANCE POR SESIÓN ============ --}}
+        {{-- ============ #1 AVANCE GENERAL POR SESIÓN (duplas en cada sesión) ============ --}}
         <section>
             <h2 class="text-base font-semibold text-gray-950 dark:text-white">Avance general por sesión</h2>
-            <p class="text-sm text-gray-500">Duplas por estado en cada sesión.</p>
+            <p class="text-sm text-gray-500">Cantidad y listado de duplas que se encuentran actualmente en cada sesión.</p>
 
-            <div class="mt-3 overflow-hidden rounded-xl border border-gray-200 dark:border-white/10">
-                <table class="w-full text-sm">
-                    <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500 dark:bg-white/5">
-                        <tr>
-                            <th class="px-4 py-2.5">Sesión</th>
-                            <th class="px-4 py-2.5">Programa</th>
-                            <th class="px-4 py-2.5 text-center">Total</th>
-                            <th class="px-4 py-2.5 text-center">Completadas</th>
-                            <th class="px-4 py-2.5 text-center">Pendientes</th>
-                            <th class="px-4 py-2.5 text-center">Vencidas</th>
-                            <th class="px-4 py-2.5">Avance</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-white/5">
-                        @forelse ($this->sessionProgress as $row)
-                            <tr>
-                                <td class="px-4 py-2.5 font-medium text-gray-900 dark:text-white">
-                                    S{{ $row['session']->number }} · {{ $row['session']->getTranslation('name', $locale) }}
-                                </td>
-                                <td class="px-4 py-2.5 text-gray-500">{{ $row['session']->program?->getTranslation('name', $locale) }}</td>
-                                <td class="px-4 py-2.5 text-center">{{ $row['total'] }}</td>
-                                <td class="px-4 py-2.5 text-center text-emerald-600">{{ $row['completed'] }}</td>
-                                <td class="px-4 py-2.5 text-center text-amber-600">{{ $row['pending'] }}</td>
-                                <td class="px-4 py-2.5 text-center text-rose-600">{{ $row['expired'] }}</td>
-                                <td class="px-4 py-2.5">
-                                    <div class="flex items-center gap-2">
-                                        <div class="h-1.5 w-24 overflow-hidden rounded-full bg-gray-100 dark:bg-white/10">
-                                            <div class="h-full rounded-full bg-primary-600" style="width: {{ $row['percent'] }}%"></div>
-                                        </div>
-                                        <span class="text-xs text-gray-500">{{ $row['percent'] }}%</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="7" class="px-4 py-6 text-center text-gray-400">Sin sesiones.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            <div class="mt-3 space-y-3">
+                @forelse ($currentGroups as $group)
+                    <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-white/10">
+                        <div class="flex items-center justify-between bg-gray-50 px-4 py-2.5 dark:bg-white/5">
+                            <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $group['label'] }}</span>
+                            <span class="rounded-full bg-primary-600 px-2.5 py-0.5 text-xs font-medium text-white">{{ $group['count'] }} {{ Str::plural('dupla', $group['count']) }}</span>
+                        </div>
+                        <table class="w-full text-sm">
+                            <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                                @foreach ($group['duplas'] as $row)
+                                    <tr>
+                                        <td class="px-4 py-2 text-gray-900 dark:text-white">{{ $row['assignment']->facilitator?->name }}</td>
+                                        <td class="px-4 py-2 text-gray-900 dark:text-white">{{ $row['assignment']->participant?->name }}</td>
+                                        <td class="px-4 py-2 text-gray-500">{{ $row['assignment']->program?->getTranslation('name', $locale) }}</td>
+                                        <td class="px-4 py-2 text-center text-gray-500">{{ $row['completed'] }}/{{ $row['total'] }}</td>
+                                        <td class="px-4 py-2 text-right"><a href="{{ $duplaUrl($row['assignment']) }}" class="text-primary-600 hover:underline">Ver informe →</a></td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @empty
+                    <div class="rounded-xl border border-gray-200 px-4 py-6 text-center text-gray-400 dark:border-white/10">Sin duplas.</div>
+                @endforelse
             </div>
         </section>
 
@@ -89,9 +75,14 @@
                             <tr>
                                 <th class="px-4 py-2.5">Facilitador</th>
                                 <th class="px-4 py-2.5">Participante</th>
-                                <th class="px-4 py-2.5">Programa</th>
-                                <th class="px-4 py-2.5 text-center">Avance</th>
-                                @if($cat === 'fuera')<th class="px-4 py-2.5 text-center">Vencidas</th>@endif
+                                @if($cat === 'fuera')
+                                    <th class="px-4 py-2.5 text-center">Debería estar</th>
+                                    <th class="px-4 py-2.5 text-center">Sesión actual</th>
+                                    <th class="px-4 py-2.5 text-center">Días de atraso</th>
+                                @else
+                                    <th class="px-4 py-2.5">Programa</th>
+                                    <th class="px-4 py-2.5 text-center">Avance</th>
+                                @endif
                                 <th class="px-4 py-2.5 text-right">Informe</th>
                             </tr>
                         </thead>
@@ -100,9 +91,14 @@
                                 <tr>
                                     <td class="px-4 py-2.5 text-gray-900 dark:text-white">{{ $row['assignment']->facilitator?->name }}</td>
                                     <td class="px-4 py-2.5 text-gray-900 dark:text-white">{{ $row['assignment']->participant?->name }}</td>
-                                    <td class="px-4 py-2.5 text-gray-500">{{ $row['assignment']->program?->getTranslation('name', $locale) }}</td>
-                                    <td class="px-4 py-2.5 text-center">{{ $row['completed'] }}/{{ $row['total'] }}</td>
-                                    @if($cat === 'fuera')<td class="px-4 py-2.5 text-center font-medium text-rose-600">{{ $row['expired'] }}</td>@endif
+                                    @if($cat === 'fuera')
+                                        <td class="px-4 py-2.5 text-center text-gray-500">{{ $row['expected'] ? 'S'.$row['expected']->number : '—' }}</td>
+                                        <td class="px-4 py-2.5 text-center text-gray-900 dark:text-white">{{ $row['current'] ? 'S'.$row['current']->number : '—' }}</td>
+                                        <td class="px-4 py-2.5 text-center font-semibold text-rose-600">{{ $row['days_behind'] }}</td>
+                                    @else
+                                        <td class="px-4 py-2.5 text-gray-500">{{ $row['assignment']->program?->getTranslation('name', $locale) }}</td>
+                                        <td class="px-4 py-2.5 text-center">{{ $row['completed'] }}/{{ $row['total'] }}</td>
+                                    @endif
                                     <td class="px-4 py-2.5 text-right">
                                         <a href="{{ $duplaUrl($row['assignment']) }}" class="text-primary-600 hover:underline">Ver informe →</a>
                                     </td>
