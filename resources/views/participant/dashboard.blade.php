@@ -72,9 +72,9 @@
                                 </div>
                             </a>
                             <div class="flex flex-col items-end gap-1">
-                                @if($att !== 'pending')
+                                @if(! empty($att) && $att !== 'pending')
                                     <span class="pm-pill ring-1 {{ ['attended'=>'bg-emerald-50 text-emerald-700 ring-emerald-200','absent'=>'bg-rose-50 text-rose-700 ring-rose-200','rescheduled'=>'bg-amber-50 text-amber-700 ring-amber-200'][$att] ?? 'bg-slate-100 text-slate-600 ring-slate-200' }}">
-                                        {{ __(App\Models\SessionRecord::ATTENDANCE[$att]) }}
+                                        {{ __(App\Models\SessionRecord::ATTENDANCE[$att] ?? 'Pendiente') }}
                                     </span>
                                 @elseif($session->start_date)
                                     <span class="whitespace-nowrap text-xs text-slate-400">{{ $session->start_date->format('d/m') }} – {{ $session->end_date?->format('d/m') }}</span>
