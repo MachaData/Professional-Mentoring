@@ -2,11 +2,14 @@
 
 namespace App\Filament\Pages;
 
+use App\Exports\CoordinatorReportsExport;
 use App\Services\ReportService;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Facades\Excel;
 
 class Reports extends Page
 {
@@ -39,6 +42,21 @@ class Reports extends Page
             \App\Models\User::ROLE_ORG_ADMIN,
             \App\Models\User::ROLE_COORDINATOR,
         ], true);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('export')
+                ->label('Exportar Excel')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->action(function () {
+                    $user = auth()->user();
+                    $orgId = $user->isSuperadmin() ? null : $user->organization_id;
+
+                    return Excel::download(new CoordinatorReportsExport($orgId), 'reportes-avance.xlsx');
+                }),
+        ];
     }
 
     public function mount(): void
