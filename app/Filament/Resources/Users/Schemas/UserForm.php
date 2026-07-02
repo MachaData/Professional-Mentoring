@@ -30,6 +30,7 @@ class UserForm
                             ->options([
                                 User::ROLE_SUPERADMIN => 'Superadministrador',
                                 User::ROLE_ORG_ADMIN => 'Administrador de organización',
+                                User::ROLE_COORDINATOR => 'Coordinador',
                                 User::ROLE_FACILITATOR => 'Facilitador',
                                 User::ROLE_PARTICIPANT => 'Participante',
                             ])

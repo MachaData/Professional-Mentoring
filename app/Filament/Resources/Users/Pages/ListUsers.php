@@ -49,6 +49,7 @@ class ListUsers extends ListRecords
                 ->label('Importar Excel')
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('info')
+                ->visible(fn () => auth()->user()->canManageContent())
                 ->modalDescription('Sube el archivo con las columnas de la plantilla. Descárgala con el botón "Descargar plantilla".')
                 ->form([
                     FileUpload::make('file')

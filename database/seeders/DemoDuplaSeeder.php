@@ -24,6 +24,19 @@ class DemoDuplaSeeder extends Seeder
             return;
         }
 
+        $coordinator = User::updateOrCreate(
+            ['email' => 'coordinador@demo.test'],
+            [
+                'name' => 'Coordinadora Demo',
+                'role' => User::ROLE_COORDINATOR,
+                'organization_id' => $org->id,
+                'company' => 'CrossPartners Group', 'position' => 'Coordinadora de programa',
+                'locale' => 'es', 'invitation_status' => 'active', 'status' => 'active',
+                'password' => Hash::make('password'), 'email_verified_at' => now(),
+            ]
+        );
+        $coordinator->syncRoles([User::ROLE_COORDINATOR]);
+
         $mentor = User::updateOrCreate(
             ['email' => 'mentor@demo.test'],
             [

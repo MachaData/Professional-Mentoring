@@ -16,6 +16,8 @@ use Filament\Tables\Table;
 
 class SurveyResource extends Resource
 {
+    use \App\Filament\Concerns\ReadOnlyForCoordinator;
+
     protected static ?string $model = Survey::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;

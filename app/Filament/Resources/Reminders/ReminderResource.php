@@ -16,6 +16,8 @@ use Filament\Tables\Table;
 
 class ReminderResource extends Resource
 {
+    use \App\Filament\Concerns\HiddenFromCoordinator;
+
     protected static ?string $model = Reminder::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBellAlert;

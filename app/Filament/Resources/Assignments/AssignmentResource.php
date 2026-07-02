@@ -16,6 +16,8 @@ use Filament\Tables\Table;
 
 class AssignmentResource extends Resource
 {
+    use \App\Filament\Concerns\ReadOnlyForCoordinator;
+
     protected static ?string $model = Assignment::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
@@ -43,7 +45,7 @@ class AssignmentResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\RecordsRelationManager::class,
         ];
     }
 
@@ -52,6 +54,7 @@ class AssignmentResource extends Resource
         return [
             'index' => ListAssignments::route('/'),
             'create' => CreateAssignment::route('/create'),
+            'view' => Pages\ViewAssignment::route('/{record}'),
             'edit' => EditAssignment::route('/{record}/edit'),
         ];
     }

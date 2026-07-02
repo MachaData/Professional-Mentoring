@@ -40,6 +40,7 @@ Panel admin: `http://localhost:8000/admin`
 |-----|-------|----------|
 | Superadministrador | `superadmin@pro-mentoring.com` | `password` |
 | Admin de organización | `admin@crosspartnersgroup.com` | `password` |
+| Coordinador (demo, solo lectura) | `coordinador@demo.test` | `password` |
 | Mentor (demo) | `mentor@demo.test` | `password` |
 | Mentee (demo) | `mentee@demo.test` | `password` |
 

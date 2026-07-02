@@ -13,6 +13,7 @@ class RolePermissionSeeder extends Seeder
         foreach ([
             User::ROLE_SUPERADMIN,
             User::ROLE_ORG_ADMIN,
+            User::ROLE_COORDINATOR,
             User::ROLE_FACILITATOR,
             User::ROLE_PARTICIPANT,
         ] as $role) {

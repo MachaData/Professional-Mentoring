@@ -17,6 +17,8 @@ use Filament\Tables\Table;
 
 class FormTemplateResource extends Resource
 {
+    use \App\Filament\Concerns\HiddenFromCoordinator;
+
     protected static ?string $model = FormTemplate::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;

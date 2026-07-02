@@ -16,6 +16,8 @@ use Filament\Tables\Table;
 
 class EmailTemplateResource extends Resource
 {
+    use \App\Filament\Concerns\HiddenFromCoordinator;
+
     protected static ?string $model = EmailTemplate::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;

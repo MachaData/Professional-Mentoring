@@ -18,6 +18,7 @@ class User extends Authenticatable implements FilamentUser, HasName
 
     public const ROLE_SUPERADMIN = 'superadmin';
     public const ROLE_ORG_ADMIN = 'organization_admin';
+    public const ROLE_COORDINATOR = 'coordinator';
     public const ROLE_FACILITATOR = 'facilitator';
     public const ROLE_PARTICIPANT = 'participant';
 
@@ -68,6 +69,11 @@ class User extends Authenticatable implements FilamentUser, HasName
         return $this->role === self::ROLE_ORG_ADMIN;
     }
 
+    public function isCoordinator(): bool
+    {
+        return $this->role === self::ROLE_COORDINATOR;
+    }
+
     public function isFacilitator(): bool
     {
         return $this->role === self::ROLE_FACILITATOR;
@@ -78,14 +84,21 @@ class User extends Authenticatable implements FilamentUser, HasName
         return $this->role === self::ROLE_PARTICIPANT;
     }
 
+    /** Roles that can create/edit/delete content in the panel. */
+    public function canManageContent(): bool
+    {
+        return in_array($this->role, [self::ROLE_SUPERADMIN, self::ROLE_ORG_ADMIN], true);
+    }
+
     // ---- Filament ------------------------------------------------------
 
     public function canAccessPanel(Panel $panel): bool
     {
-        // Only the admin panel is Filament. Superadmins and org-admins enter;
-        // facilitators/participants use the dedicated Blade/Livewire portals.
-        return in_array($this->role, [self::ROLE_SUPERADMIN, self::ROLE_ORG_ADMIN], true)
-            && $this->status === 'active';
+        // Admin panel: superadmins, org-admins (full) and coordinators (read-only).
+        // Facilitators/participants use the dedicated Blade/Livewire portals.
+        return in_array($this->role, [
+            self::ROLE_SUPERADMIN, self::ROLE_ORG_ADMIN, self::ROLE_COORDINATOR,
+        ], true) && $this->status === 'active';
     }
 
     public function getFilamentName(): string

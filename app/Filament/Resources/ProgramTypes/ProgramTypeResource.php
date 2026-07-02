@@ -16,6 +16,8 @@ use Filament\Tables\Table;
 
 class ProgramTypeResource extends Resource
 {
+    use \App\Filament\Concerns\HiddenFromCoordinator;
+
     protected static ?string $model = ProgramType::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;

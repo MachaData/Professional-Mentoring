@@ -17,6 +17,8 @@ use Filament\Tables\Table;
 
 class SessionResource extends Resource
 {
+    use \App\Filament\Concerns\ReadOnlyForCoordinator;
+
     protected static ?string $model = Session::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;

@@ -9,6 +9,7 @@ use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -31,6 +32,7 @@ class UsersTable
                     ->formatStateUsing(fn (string $state) => match ($state) {
                         User::ROLE_SUPERADMIN => 'Superadmin',
                         User::ROLE_ORG_ADMIN => 'Admin Org.',
+                        User::ROLE_COORDINATOR => 'Coordinador',
                         User::ROLE_FACILITATOR => 'Facilitador',
                         User::ROLE_PARTICIPANT => 'Participante',
                         default => $state,
@@ -38,6 +40,7 @@ class UsersTable
                     ->color(fn (string $state) => match ($state) {
                         User::ROLE_SUPERADMIN => 'danger',
                         User::ROLE_ORG_ADMIN => 'warning',
+                        User::ROLE_COORDINATOR => 'primary',
                         User::ROLE_FACILITATOR => 'info',
                         default => 'gray',
                     }),
@@ -54,6 +57,7 @@ class UsersTable
                 SelectFilter::make('role')->label('Rol')->options([
                     User::ROLE_SUPERADMIN => 'Superadmin',
                     User::ROLE_ORG_ADMIN => 'Admin Org.',
+                    User::ROLE_COORDINATOR => 'Coordinador',
                     User::ROLE_FACILITATOR => 'Facilitador',
                     User::ROLE_PARTICIPANT => 'Participante',
                 ]),
@@ -62,6 +66,7 @@ class UsersTable
                 ]),
             ])
             ->recordActions([
+                ViewAction::make(),
                 EditAction::make(),
                 Action::make('invite')
                     ->label('Enviar invitación')
@@ -69,7 +74,8 @@ class UsersTable
                     ->color('info')
                     ->requiresConfirmation()
                     ->modalDescription('Se generará una contraseña temporal y se enviará el correo de bienvenida.')
-                    ->visible(fn (User $record) => in_array($record->role, [User::ROLE_FACILITATOR, User::ROLE_PARTICIPANT], true))
+                    ->visible(fn (User $record) => auth()->user()->canManageContent()
+                        && in_array($record->role, [User::ROLE_FACILITATOR, User::ROLE_PARTICIPANT], true))
                     ->action(function (User $record) {
                         try {
                             app(UserInvitationService::class)->invite($record);
@@ -84,6 +90,7 @@ class UsersTable
                     BulkAction::make('inviteBulk')
                         ->label('Enviar invitaciones')
                         ->icon('heroicon-o-envelope')
+                        ->visible(fn () => auth()->user()->canManageContent())
                         ->requiresConfirmation()
                         ->action(function (Collection $records) {
                             $service = app(UserInvitationService::class);

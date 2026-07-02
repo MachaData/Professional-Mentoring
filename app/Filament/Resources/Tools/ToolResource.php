@@ -16,6 +16,8 @@ use Filament\Tables\Table;
 
 class ToolResource extends Resource
 {
+    use \App\Filament\Concerns\ReadOnlyForCoordinator;
+
     protected static ?string $model = Tool::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Assignments\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -39,6 +40,7 @@ class AssignmentsTable
                 ]),
             ])
             ->recordActions([
+                ViewAction::make()->label('Ver dupla'),
                 EditAction::make(),
             ])
             ->toolbarActions([
