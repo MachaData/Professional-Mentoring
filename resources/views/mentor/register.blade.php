@@ -60,5 +60,11 @@
             @livewire('mentor.register-session', ['record' => $record])
         </div>
     </div>
+
+    @if($assignment)
+        <div class="pm-card mt-6 p-6">
+            @livewire('private-files', ['assignment' => $assignment, 'sessionId' => $record->session_id], key('files-s-'.$record->session_id))
+        </div>
+    @endif
 </div>
 @endsection

@@ -20,4 +20,11 @@
             <p class="px-2 py-4 text-center text-sm text-slate-400">{{ __('Sin materiales generales.') }}</p>
         @endforelse
     </div>
+
+    {{-- Private files (dupla), general ones, below Materiales --}}
+    @isset($assignment)
+        <div class="mt-6">
+            @livewire('private-files', ['assignment' => $assignment], key('files-general-'.$assignment->id))
+        </div>
+    @endisset
 </aside>

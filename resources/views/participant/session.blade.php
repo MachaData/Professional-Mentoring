@@ -104,6 +104,11 @@
         </div>
     @endif
 
+    {{-- Private files tied to this session --}}
+    <div class="pm-card p-6">
+        @livewire('private-files', ['assignment' => $assignment, 'sessionId' => $session->id], key('files-s-'.$session->id))
+    </div>
+
     {{-- Agreements (visible fields from completed record) --}}
     @if($visible->isNotEmpty())
         <div class="pm-card p-6">

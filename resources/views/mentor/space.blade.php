@@ -1,5 +1,5 @@
 @extends('layouts.portal')
-@section('title', __('Espacio de la dupla'))
+@section('title', __('Buzón de mensajes'))
 
 @section('content')
 @php $locale = app()->getLocale(); @endphp
@@ -10,9 +10,9 @@
 </a>
 
 <div class="mt-2 mb-6">
-    <h1 class="text-2xl font-bold">{{ __('Espacio con') }} {{ $assignment->participant->name }}</h1>
+    <h1 class="text-2xl font-bold">{{ __('Buzón') }} · {{ $assignment->participant->name }}</h1>
     <p class="text-sm text-slate-500">{{ $assignment->program->getTranslation('name', $locale) }}</p>
 </div>
 
-@livewire('dupla-space', ['assignment' => $assignment])
+@livewire('mailbox', ['assignment' => $assignment])
 @endsection

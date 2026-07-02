@@ -83,13 +83,14 @@ class MentorController extends Controller
     {
         abort_unless($record->facilitator_id === $request->user()->id, 403);
 
-        $record->load('session.stage');
+        $record->load('session.stage', 'assignment');
         $resolver = app(ResourceResolver::class);
 
         $tools = $resolver->sessionTools($record->session, 'facilitator');
         $surveyUrl = $record->session->survey_url;
+        $assignment = $record->assignment;
 
-        return view('mentor.register', compact('record', 'tools', 'surveyUrl'));
+        return view('mentor.register', compact('record', 'tools', 'surveyUrl', 'assignment'));
     }
 
     /** A pending/draft record whose session window has passed is "expired". */

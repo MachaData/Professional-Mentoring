@@ -89,11 +89,13 @@ class DemoDuplaSeeder extends Seeder
         if ($assignment->messages()->count() === 0) {
             $assignment->messages()->create([
                 'organization_id' => $org->id, 'sender_id' => $mentor->id,
+                'subject' => 'Bienvenido al programa',
                 'body' => '¡Hola! Bienvenido al programa. Cualquier duda, escríbeme por aquí.',
                 'read_at' => now(),
             ]);
             $assignment->messages()->create([
                 'organization_id' => $org->id, 'sender_id' => $mentee->id,
+                'subject' => 'Gracias',
                 'body' => 'Gracias, Eduardo. Quedo atento a la primera sesión.',
             ]);
         }

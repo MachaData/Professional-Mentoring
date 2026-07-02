@@ -1,5 +1,5 @@
 @extends('layouts.portal')
-@section('title', __('Mensajes y archivos'))
+@section('title', __('Buzón de mensajes'))
 
 @section('content')
 @php $locale = app()->getLocale(); @endphp
@@ -10,9 +10,9 @@
 </a>
 
 <div class="mt-2 mb-6">
-    <h1 class="text-2xl font-bold">{{ __('Mensajes y archivos') }}</h1>
+    <h1 class="text-2xl font-bold">{{ __('Buzón de mensajes') }}</h1>
     <p class="text-sm text-slate-500">{{ __('Con tu mentor') }} {{ $assignment->facilitator->name }}</p>
 </div>
 
-@livewire('dupla-space', ['assignment' => $assignment])
+@livewire('mailbox', ['assignment' => $assignment])
 @endsection
