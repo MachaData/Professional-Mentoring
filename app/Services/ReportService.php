@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Assignment;
 use App\Models\Program;
+use App\Models\Session;
 use App\Models\SessionRecord;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -111,6 +112,86 @@ class ReportService
                     'total' => $total,
                     'completed' => $completed,
                     'percent' => $total ? (int) round($completed / $total * 100) : 0,
+                ];
+            });
+    }
+
+    /**
+     * Overall progress per session: how many dupla records are completed,
+     * pending or overdue for each session.
+     *
+     * @return Collection<int,array{session:Session,total:int,completed:int,pending:int,expired:int,percent:int}>
+     */
+    public function progressBySession(): Collection
+    {
+        $today = Carbon::today();
+
+        return $this->scope(Session::query())
+            ->with(['records', 'program:id,name'])
+            ->orderBy('program_id')->orderBy('sort_order')
+            ->get()
+            ->map(function (Session $session) use ($today) {
+                $isPast = $session->end_date && $session->end_date->lt($today);
+                $completed = $pending = $expired = 0;
+
+                foreach ($session->records as $record) {
+                    if ($record->status === SessionRecord::STATUS_COMPLETED) {
+                        $completed++;
+                    } elseif (in_array($record->status, [SessionRecord::STATUS_PENDING, SessionRecord::STATUS_DRAFT], true)) {
+                        $isPast ? $expired++ : $pending++;
+                    }
+                }
+
+                $total = $session->records->count();
+
+                return [
+                    'session' => $session,
+                    'total' => $total,
+                    'completed' => $completed,
+                    'pending' => $pending,
+                    'expired' => $expired,
+                    'percent' => $total ? (int) round($completed / $total * 100) : 0,
+                ];
+            });
+    }
+
+    /**
+     * Classifies every dupla by schedule state.
+     *  - sin_inicio: no completed sessions yet
+     *  - fuera: has at least one overdue (expired) session
+     *  - dentro: started and with no overdue sessions
+     *
+     * @return Collection<int,array{assignment:Assignment,total:int,completed:int,expired:int,percent:int,category:string}>
+     */
+    public function duplasBySchedule(): Collection
+    {
+        $today = Carbon::today();
+
+        return $this->scope(Assignment::query())
+            ->with(['facilitator:id,name', 'participant:id,name', 'program:id,name', 'records.session:id,end_date'])
+            ->get()
+            ->map(function (Assignment $assignment) use ($today) {
+                $completed = $expired = 0;
+
+                foreach ($assignment->records as $record) {
+                    if ($record->status === SessionRecord::STATUS_COMPLETED) {
+                        $completed++;
+                    } elseif (in_array($record->status, [SessionRecord::STATUS_PENDING, SessionRecord::STATUS_DRAFT], true)
+                        && $record->session?->end_date && $record->session->end_date->lt($today)) {
+                        $expired++;
+                    }
+                }
+
+                $total = $assignment->records->count();
+                $category = $completed === 0 ? 'sin_inicio' : ($expired > 0 ? 'fuera' : 'dentro');
+
+                return [
+                    'assignment' => $assignment,
+                    'total' => $total,
+                    'completed' => $completed,
+                    'expired' => $expired,
+                    'percent' => $total ? (int) round($completed / $total * 100) : 0,
+                    'category' => $category,
                 ];
             });
     }
