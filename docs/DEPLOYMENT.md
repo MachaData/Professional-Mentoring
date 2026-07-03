@@ -14,6 +14,11 @@ APP_URL=https://pro-mentoring.com
 APP_LOCALE=es
 APP_FALLBACK_LOCALE=en
 
+# Multi-tenant: dominio base para subdominios por cliente.
+# lasbambas.pro-mentoring.com  →  Organización con slug "lasbambas".
+# Vacío = login genérico sin subdominios.
+APP_BASE_DOMAIN=pro-mentoring.com
+
 # PostgreSQL
 DB_CONNECTION=pgsql
 DB_HOST=...
@@ -60,9 +65,37 @@ MAIL_FROM_NAME="Professional Mentoring"
    de inicio:
    - Worker: `php artisan queue:work --tries=3 --max-time=3600`
    - Scheduler: `php artisan schedule:work`
-6. Configura el dominio (`pro-mentoring.com`); Railway provee SSL automático.
-7. Primer despliegue: ejecuta el seed inicial una vez con
+6. Configura el dominio (`pro-mentoring.com`) y el comodín `*.pro-mentoring.com`
+   para los subdominios por cliente; Railway provee SSL automático.
+7. **Persistencia de archivos (importante):** el sistema de archivos de Railway
+   es efímero — los logos, fondos y fotos subidos se **pierden en cada
+   redespliegue**. Añade un **Volume** montado en `storage/app/public`, o
+   configura `FILESYSTEM_DISK=s3` con un bucket (S3/Cloudflare R2/DO Spaces).
+   Sin esto, la marca de cada cliente desaparecería al actualizar la app.
+8. Primer despliegue: ejecuta el seed inicial una vez con
    `php artisan db:seed --force` (crea CrossPartners, Las Bambas y el superadmin).
+
+## Subdominios por cliente (multi-tenant)
+
+Cada empresa cliente es una **Organización** con un `slug`. El middleware
+`ResolveTenant` lee el host de la petición y muestra el login con la marca del
+cliente (logo, fondo, color, nombre) y restringe el acceso a sus miembros.
+
+Para activarlo en producción:
+
+1. Define `APP_BASE_DOMAIN=pro-mentoring.com` (ver variables arriba).
+2. **DNS wildcard**: crea un registro `*.pro-mentoring.com` apuntando al mismo
+   servicio web (en Railway: añade el dominio comodín `*.pro-mentoring.com` en
+   Settings → Domains; requiere un CNAME wildcard en tu proveedor DNS).
+3. El certificado SSL debe cubrir el comodín. Railway/Cloudflare emiten
+   certificados wildcard automáticamente para dominios verificados.
+4. Crea cada cliente como Organización en el panel del superadmin y asígnale un
+   `slug` (ej. `lasbambas`). Su espacio queda en `lasbambas.pro-mentoring.com`.
+   - `www`, `app`, `admin`, `operador`, `panel` están reservados (login genérico).
+5. Local sin DNS: puedes probar con `?tenant=<slug>` (solo fuera de producción).
+
+> Los subdominios centrales y el dominio raíz muestran el login de la
+> plataforma; el panel de administración vive en `/admin`.
 
 ## DigitalOcean (App Platform)
 
