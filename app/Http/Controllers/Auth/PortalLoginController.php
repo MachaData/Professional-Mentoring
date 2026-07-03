@@ -33,6 +33,20 @@ class PortalLoginController extends Controller
             ]);
         }
 
+        // On a client subdomain, only members of that tenant may enter here
+        // (superadmins of the operator can access any space).
+        $tenant = app()->bound('tenant') ? app('tenant') : null;
+        $user = Auth::user();
+        if ($tenant && ! $user->isSuperadmin() && $user->organization_id !== $tenant->id) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'email' => __('Esta cuenta no pertenece a este espacio.'),
+            ]);
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(self::homeFor(Auth::user()));

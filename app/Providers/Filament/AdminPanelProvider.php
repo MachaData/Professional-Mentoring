@@ -30,7 +30,13 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->login()
-            ->brandName('Professional Mentoring')
+            ->brandName(fn (): string => static::currentTenant()?->name ?? 'Professional Mentoring')
+            ->brandLogo(function (): ?string {
+                $tenant = static::currentTenant();
+
+                return $tenant?->logo ? \Illuminate\Support\Facades\Storage::url($tenant->logo) : null;
+            })
+            ->brandLogoHeight('2rem')
             ->colors([
                 'primary' => Color::Red,
             ])
@@ -56,10 +62,17 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                \App\Http\Middleware\ResolveTenant::class,
                 \App\Http\Middleware\SetLocale::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
             ]);
+    }
+
+    /** The tenant resolved by ResolveTenant for this request, if any. */
+    protected static function currentTenant(): ?\App\Models\Organization
+    {
+        return app()->bound('tenant') ? app('tenant') : null;
     }
 }
