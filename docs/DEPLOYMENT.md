@@ -107,6 +107,24 @@ Para activarlo en producción:
    `php artisan schedule:work`.
 4. Variables de entorno como arriba; SSL gestionado por la plataforma.
 
+## Seguridad del seed inicial (¡leer antes de producción!)
+
+El seed crea el superadmin y el admin de la operadora. **No los dejes con la
+contraseña por defecto** en una URL pública. Define en Railway:
+
+```env
+SEED_SUPERADMIN_PASSWORD=<contraseña-fuerte>   # superadmin@pro-mentoring.com
+SEED_ADMIN_PASSWORD=<contraseña-fuerte>        # admin@crosspartnersgroup.com
+SEED_DEMO=false                                # omite las cuentas *@demo.test de prueba
+```
+
+- Con `SEED_DEMO=false` **no** se crean las cuentas demo (mentor/mentee/coordinador
+  `@demo.test`). Úsalo cuando ya tengas usuarios reales. Si quieres mostrar el
+  sistema con datos de ejemplo primero, déjalo en `true` y bórralas después.
+- Las cuentas demo se pueden sembrar aparte cuando quieras:
+  `php artisan db:seed --class=DemoDuplaSeeder --force`.
+- Cambia igualmente las contraseñas desde el panel tras el primer ingreso.
+
 ## Post-despliegue
 - Cambia las contraseñas de los usuarios sembrados.
 - Sube los logos/branding desde el panel del superadmin.

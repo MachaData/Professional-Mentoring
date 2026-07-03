@@ -90,7 +90,7 @@ class CrossPartnersSeeder extends Seeder
                 'locale' => 'es',
                 'invitation_status' => 'active',
                 'status' => 'active',
-                'password' => Hash::make('password'),
+                'password' => Hash::make(env('SEED_SUPERADMIN_PASSWORD', 'password')),
                 'email_verified_at' => now(),
             ]
         );
@@ -109,7 +109,7 @@ class CrossPartnersSeeder extends Seeder
                 'locale' => 'es',
                 'invitation_status' => 'active',
                 'status' => 'active',
-                'password' => Hash::make('password'),
+                'password' => Hash::make(env('SEED_ADMIN_PASSWORD', 'password')),
                 'email_verified_at' => now(),
             ]
         );
