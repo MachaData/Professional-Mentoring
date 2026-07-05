@@ -28,6 +28,10 @@ class ExtraSessionsRelationManager extends RelationManager
 
     protected static ?string $title = 'Sesiones adicionales';
 
+    protected static ?string $modelLabel = 'sesión adicional';
+
+    protected static ?string $pluralModelLabel = 'sesiones adicionales';
+
     public function isReadOnly(): bool
     {
         return ! (auth()->user()?->canSuperviseDuplas() ?? false);

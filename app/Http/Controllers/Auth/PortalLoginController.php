@@ -65,7 +65,7 @@ class PortalLoginController extends Controller
     public static function homeFor(User $user): string
     {
         return match ($user->role) {
-            User::ROLE_SUPERADMIN, User::ROLE_ORG_ADMIN => url('/admin'),
+            User::ROLE_SUPERADMIN, User::ROLE_ORG_ADMIN, User::ROLE_COORDINATOR => url('/admin'),
             User::ROLE_FACILITATOR => route('mentor.dashboard'),
             default => route('participant.dashboard'),
         };

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Assignment;
+use App\Models\Session;
 use App\Models\SessionRecord;
 
 /**
@@ -15,8 +16,12 @@ class SessionRecordProvisioner
     {
         $created = 0;
 
-        // Program curriculum + this dupla's own extra sessions.
-        $sessions = $assignment->allSessions();
+        // Program curriculum + this dupla's own extra sessions. Queried fresh
+        // (not via cached relations) so it always sees just-created sessions.
+        $sessions = Session::withoutGlobalScopes()
+            ->where('program_id', $assignment->program_id)
+            ->where(fn ($q) => $q->whereNull('assignment_id')->orWhere('assignment_id', $assignment->id))
+            ->get();
 
         foreach ($sessions as $session) {
             $record = SessionRecord::firstOrNew([

@@ -42,13 +42,26 @@ class ExtraSessionsTest extends TestCase
     public function test_provisioner_creates_a_record_for_the_extra_session(): void
     {
         $assignment = Assignment::firstOrFail();
+
+        // Reproduce the UI flow: relations are already cached (e.g. read to
+        // compute the next number) BEFORE the extra session is created.
+        $assignment->allSessions();
         $extra = $this->makeExtra($assignment);
 
         app(SessionRecordProvisioner::class)->forAssignment($assignment);
 
         $this->assertNotNull(
-            $assignment->records()->where('session_id', $extra->id)->first()
+            $assignment->records()->where('session_id', $extra->id)->first(),
+            'the extra session must get a provisioned record even with stale relations'
         );
+    }
+
+    public function test_coordinator_lands_on_the_admin_panel_after_login(): void
+    {
+        $this->post('/login', [
+            'email' => 'coordinador@demo.test',
+            'password' => 'password',
+        ])->assertRedirect('/admin');
     }
 
     public function test_mentor_sees_the_extra_session_in_the_portal(): void
