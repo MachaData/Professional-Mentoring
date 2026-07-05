@@ -14,12 +14,19 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class SessionResource extends Resource
 {
     use \App\Filament\Concerns\ReadOnlyForCoordinator;
 
     protected static ?string $model = Session::class;
+
+    /** Only the program curriculum here; per-dupla extras live under the dupla. */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->whereNull('assignment_id');
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 

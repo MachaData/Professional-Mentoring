@@ -47,12 +47,12 @@ class MentorController extends Controller
     {
         abort_unless($assignment->facilitator_id === $request->user()->id, 403);
 
-        $assignment->load(['participant', 'program.sessions.stage']);
+        $assignment->load(['participant', 'program.sessions.stage', 'extraSessions.stage']);
 
         $records = $assignment->records()->get()->keyBy('session_id');
         $resolver = app(ResourceResolver::class);
 
-        $sessions = $assignment->program->sessions->map(function ($session) use ($records, $assignment, $resolver) {
+        $sessions = $assignment->allSessions()->map(function ($session) use ($records, $assignment, $resolver) {
             $record = $records->get($session->id);
 
             return [
@@ -86,13 +86,13 @@ class MentorController extends Controller
 
         $assignments = Assignment::query()
             ->where('facilitator_id', $facilitator->id)
-            ->with(['participant:id,name', 'program.sessions', 'records'])
+            ->with(['participant:id,name', 'program.sessions', 'extraSessions', 'records'])
             ->get();
 
-        // Calendar events: the program schedule (dedup sessions shared by duplas),
-        // tinted by their window. Per-dupla progress lives in the table below.
+        // Calendar events: every dupla's sessions (program curriculum + extras),
+        // deduped. Per-dupla progress lives in the table below.
         $sessions = $assignments
-            ->flatMap(fn ($a) => $a->program->sessions)
+            ->flatMap(fn ($a) => $a->allSessions())
             ->unique('id')
             ->sortBy('sort_order')
             ->values();
@@ -102,7 +102,7 @@ class MentorController extends Controller
 
         // Basic indicators — one row per dupla.
         $rows = $assignments->map(function (Assignment $assignment) {
-            $sessions = $assignment->program->sessions->sortBy('sort_order')->values();
+            $sessions = $assignment->allSessions();
             $recordsBySession = $assignment->records->keyBy('session_id');
             $total = $sessions->count();
 

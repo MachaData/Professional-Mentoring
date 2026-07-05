@@ -127,6 +127,7 @@ class ReportService
         $today = Carbon::today();
 
         return $this->scope(Session::query())
+            ->whereNull('assignment_id') // curriculum only; per-dupla extras excluded
             ->with(['records', 'program:id,name'])
             ->orderBy('program_id')->orderBy('sort_order')
             ->get()
@@ -187,19 +188,25 @@ class ReportService
     {
         $today = Carbon::today();
 
-        // Ordered sessions + expected-session per program (computed once).
-        $programSessions = $this->scope(Session::query())
-            ->get(['id', 'program_id', 'number', 'name', 'sort_order', 'start_date', 'end_date'])
-            ->sortBy('sort_order')
-            ->groupBy('program_id');
+        $allSessions = $this->scope(Session::query())
+            ->get(['id', 'program_id', 'assignment_id', 'number', 'name', 'sort_order', 'start_date', 'end_date'])
+            ->sortBy('sort_order');
 
+        // Curriculum (program-wide) sessions per program + extras per dupla.
+        $programSessions = $allSessions->whereNull('assignment_id')->groupBy('program_id');
+        $extraByAssignment = $allSessions->whereNotNull('assignment_id')->groupBy('assignment_id');
+
+        // "Expected" position follows the curriculum only, not ad-hoc extras.
         $expectedByProgram = $programSessions->map(fn ($sessions) => $this->expectedSession($sessions->values(), $today));
 
         return $this->scope(Assignment::query())
             ->with(['facilitator:id,name', 'participant:id,name', 'program:id,name', 'records'])
             ->get()
-            ->map(function (Assignment $assignment) use ($today, $programSessions, $expectedByProgram) {
-                $sessions = ($programSessions[$assignment->program_id] ?? collect())->values();
+            ->map(function (Assignment $assignment) use ($today, $programSessions, $extraByAssignment, $expectedByProgram) {
+                $sessions = ($programSessions[$assignment->program_id] ?? collect())
+                    ->concat($extraByAssignment[$assignment->id] ?? collect())
+                    ->sortBy('sort_order')
+                    ->values();
                 $recordsBySession = $assignment->records->keyBy('session_id');
 
                 $completed = 0;

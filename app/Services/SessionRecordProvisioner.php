@@ -15,7 +15,8 @@ class SessionRecordProvisioner
     {
         $created = 0;
 
-        $sessions = $assignment->program->sessions()->get();
+        // Program curriculum + this dupla's own extra sessions.
+        $sessions = $assignment->allSessions();
 
         foreach ($sessions as $session) {
             $record = SessionRecord::firstOrNew([

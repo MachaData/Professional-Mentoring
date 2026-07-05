@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 
 class AssignmentResource extends Resource
 {
-    use \App\Filament\Concerns\ReadOnlyForCoordinator;
+    use \App\Filament\Concerns\ManagedBySupervisor;
 
     protected static ?string $model = Assignment::class;
 
@@ -46,6 +46,7 @@ class AssignmentResource extends Resource
     {
         return [
             RelationManagers\RecordsRelationManager::class,
+            RelationManagers\ExtraSessionsRelationManager::class,
             RelationManagers\FilesRelationManager::class,
             RelationManagers\MessagesRelationManager::class,
         ];

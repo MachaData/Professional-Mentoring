@@ -20,7 +20,7 @@ class ParticipantController extends Controller
 
         $assignment = Assignment::query()
             ->where('participant_id', $participant->id)
-            ->with(['facilitator', 'program.sessions.stage', 'records.values.customField'])
+            ->with(['facilitator', 'program.sessions.stage', 'extraSessions.stage', 'records.values.customField'])
             ->latest()
             ->first();
 
@@ -33,7 +33,7 @@ class ParticipantController extends Controller
 
             $records = $assignment->records->keyBy('session_id');
 
-            $sessions = $assignment->program->sessions
+            $sessions = $assignment->allSessions()
                 ->where('visible_to_participant', true)
                 ->map(function ($session) use ($records, $resolver) {
                     $record = $records->get($session->id);
@@ -82,7 +82,7 @@ class ParticipantController extends Controller
 
         $assignment = Assignment::query()
             ->where('participant_id', $participant->id)
-            ->with(['program.sessions', 'records'])
+            ->with(['program.sessions', 'extraSessions', 'records'])
             ->latest()
             ->first();
 
@@ -95,9 +95,8 @@ class ParticipantController extends Controller
             $today = Carbon::today();
             $records = $assignment->records->keyBy('session_id');
 
-            $sessions = $assignment->program->sessions
+            $sessions = $assignment->allSessions()
                 ->where('visible_to_participant', true)
-                ->sortBy('sort_order')
                 ->values();
 
             $statusBySession = $sessions
@@ -146,6 +145,8 @@ class ParticipantController extends Controller
             ->firstOrFail();
 
         abort_unless($session->visible_to_participant, 403);
+        // Extra (per-dupla) sessions may only be opened by their own dupla.
+        abort_unless($session->assignment_id === null || $session->assignment_id === $assignment->id, 403);
 
         $record = $assignment->records()->where('session_id', $session->id)->first();
 

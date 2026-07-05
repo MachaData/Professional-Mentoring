@@ -90,6 +90,16 @@ class User extends Authenticatable implements FilamentUser, HasName
         return in_array($this->role, [self::ROLE_SUPERADMIN, self::ROLE_ORG_ADMIN], true);
     }
 
+    /**
+     * Roles that supervise duplas: admins plus coordinators. They may edit
+     * mentors/mentees, fill in per-dupla session data and add extra sessions,
+     * but not touch the program configuration.
+     */
+    public function canSuperviseDuplas(): bool
+    {
+        return $this->canManageContent() || $this->isCoordinator();
+    }
+
     // ---- Filament ------------------------------------------------------
 
     public function canAccessPanel(Panel $panel): bool

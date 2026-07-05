@@ -35,6 +35,24 @@ class Session extends Model
         return $this->belongsTo(Program::class);
     }
 
+    /** Set only for extra sessions that belong to a single dupla. */
+    public function assignment(): BelongsTo
+    {
+        return $this->belongsTo(Assignment::class);
+    }
+
+    /** Program-wide curriculum sessions (shared by every dupla). */
+    public function scopeProgramWide($query)
+    {
+        return $query->whereNull('assignment_id');
+    }
+
+    /** True when this session is an extra added for a specific dupla. */
+    public function isExtra(): bool
+    {
+        return $this->assignment_id !== null;
+    }
+
     public function stage(): BelongsTo
     {
         return $this->belongsTo(Stage::class);

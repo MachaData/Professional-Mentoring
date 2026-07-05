@@ -47,6 +47,29 @@ class Assignment extends Model
         return $this->hasMany(SessionRecord::class);
     }
 
+    /** Extra sessions added for this dupla only. */
+    public function extraSessions(): HasMany
+    {
+        return $this->hasMany(Session::class)->orderBy('sort_order');
+    }
+
+    /**
+     * The full session set for this dupla: the program curriculum plus its own
+     * extra sessions, ordered chronologically (by start date, then order).
+     *
+     * @return \Illuminate\Support\Collection<int,\App\Models\Session>
+     */
+    public function allSessions(): \Illuminate\Support\Collection
+    {
+        return $this->program->sessions
+            ->concat($this->extraSessions)
+            ->sortBy([
+                fn ($s) => $s->start_date?->timestamp ?? PHP_INT_MAX,
+                fn ($s) => $s->sort_order,
+            ])
+            ->values();
+    }
+
     public function files(): HasMany
     {
         return $this->hasMany(SharedFile::class)->latest();

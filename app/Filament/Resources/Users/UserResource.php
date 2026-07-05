@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class UserResource extends Resource
 {
-    use \App\Filament\Concerns\ReadOnlyForCoordinator;
+    use \App\Filament\Concerns\ManagedBySupervisor;
 
     protected static ?string $model = User::class;
 

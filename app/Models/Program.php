@@ -47,9 +47,10 @@ class Program extends Model
         return $this->hasMany(Stage::class)->orderBy('sort_order');
     }
 
+    /** Program-wide curriculum sessions (excludes per-dupla extras). */
     public function sessions(): HasMany
     {
-        return $this->hasMany(Session::class)->orderBy('sort_order');
+        return $this->hasMany(Session::class)->whereNull('assignment_id')->orderBy('sort_order');
     }
 
     public function assignments(): HasMany

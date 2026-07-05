@@ -3,7 +3,11 @@
 namespace App\Filament\Resources\Assignments\RelationManagers;
 
 use App\Models\SessionRecord;
+use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -21,9 +25,29 @@ class RecordsRelationManager extends RelationManager
 
     protected static ?string $title = 'Sesiones registradas';
 
+    /** Supervisors (admins + coordinators) may fill in each session's data. */
     public function isReadOnly(): bool
     {
-        return true;
+        return ! (auth()->user()?->canSuperviseDuplas() ?? false);
+    }
+
+    /** Operational fields a coordinator/admin fills per session (not the survey). */
+    public function form(Schema $schema): Schema
+    {
+        return $schema->components([
+            Select::make('status')->label('Registro')
+                ->options([
+                    SessionRecord::STATUS_PENDING => 'Pendiente',
+                    SessionRecord::STATUS_DRAFT => 'Borrador',
+                    SessionRecord::STATUS_COMPLETED => 'Completada',
+                ])->required(),
+            Select::make('attendance')->label('Asistencia')
+                ->options(collect(SessionRecord::ATTENDANCE)->map(fn ($l) => __($l))->all()),
+            Select::make('modality')->label('Modalidad')
+                ->options(collect(SessionRecord::MODALITY)->map(fn ($l) => __($l))->all()),
+            DatePicker::make('real_session_date')->label('Fecha real de la sesión')->native(false),
+            TextInput::make('meeting_url')->label('Link de la reunión (Meet/Zoom/Teams)')->url(),
+        ])->columns(2);
     }
 
     public function infolist(Schema $schema): Schema
@@ -85,6 +109,8 @@ class RecordsRelationManager extends RelationManager
             ])
             ->recordActions([
                 ViewAction::make()->label('Ver'),
+                EditAction::make()->label('Editar')
+                    ->visible(fn () => auth()->user()?->canSuperviseDuplas() ?? false),
             ]);
     }
 }

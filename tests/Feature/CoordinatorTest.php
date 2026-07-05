@@ -42,15 +42,18 @@ class CoordinatorTest extends TestCase
         $this->actingAs($u)->get("/admin/assignments/{$assignment->getKey()}")->assertSuccessful();
     }
 
-    public function test_coordinator_cannot_create_or_edit(): void
+    public function test_coordinator_can_manage_duplas_and_users(): void
     {
         $u = $this->coordinator();
         $assignment = Assignment::firstOrFail();
 
-        // Create/edit routes are denied for the read-only coordinator.
+        // Supervisors may create/edit duplas and mentors/mentees to follow up.
+        $this->actingAs($u)->get('/admin/assignments/create')->assertSuccessful();
+        $this->actingAs($u)->get("/admin/assignments/{$assignment->getKey()}/edit")->assertSuccessful();
+        $this->actingAs($u)->get('/admin/users/create')->assertSuccessful();
+
+        // But program configuration stays off-limits.
         $this->actingAs($u)->get('/admin/programs/create')->assertForbidden();
-        $this->actingAs($u)->get('/admin/assignments/create')->assertForbidden();
-        $this->actingAs($u)->get("/admin/assignments/{$assignment->getKey()}/edit")->assertForbidden();
     }
 
     public function test_coordinator_cannot_access_configuration_resources(): void
