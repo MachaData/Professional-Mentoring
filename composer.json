@@ -7,6 +7,10 @@
     "license": "MIT",
     "require": {
         "php": "^8.4",
+        "ext-intl": "*",
+        "ext-gd": "*",
+        "ext-zip": "*",
+        "ext-pdo_pgsql": "*",
         "filament/filament": "^4.0",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
