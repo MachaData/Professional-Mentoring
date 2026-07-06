@@ -3,12 +3,20 @@
 namespace App\Filament\Shared;
 
 use App\Enums\FieldType;
+use App\Models\FormTemplate;
+use App\Models\Session;
+use App\Services\FormTemplateApplier;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -43,6 +51,34 @@ class FieldsRelationManagerTable
                         $data['organization_id'] = $owner->organization_id;
 
                         return $data;
+                    }),
+                Action::make('applyFormTemplate')
+                    ->label('Aplicar plantilla')
+                    ->icon(Heroicon::OutlinedClipboardDocumentList)
+                    ->visible(fn () => $manager->getOwnerRecord() instanceof Session)
+                    ->schema([
+                        Select::make('form_template_id')->label('Plantilla de formulario')
+                            ->options(fn () => FormTemplate::query()
+                                ->where('status', 'active')
+                                ->orderBy('name')
+                                ->pluck('name', 'id'))
+                            ->searchable()->required(),
+                        Toggle::make('replace')->label('Reemplazar campos existentes')
+                            ->helperText('Si se activa, se eliminan los campos actuales de la sesión antes de copiar. Si no, se agregan al final.'),
+                    ])
+                    ->action(function (array $data) use ($manager) {
+                        $template = FormTemplate::findOrFail($data['form_template_id']);
+                        $count = app(FormTemplateApplier::class)->apply(
+                            $template,
+                            $manager->getOwnerRecord(),
+                            (bool) ($data['replace'] ?? false),
+                        );
+
+                        Notification::make()
+                            ->success()
+                            ->title('Plantilla aplicada')
+                            ->body("Se copiaron {$count} campos desde «{$template->name}».")
+                            ->send();
                     }),
             ])
             ->recordActions([

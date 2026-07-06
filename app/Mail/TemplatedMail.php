@@ -19,6 +19,7 @@ class TemplatedMail extends Mailable
     public function __construct(
         public string $renderedSubject,
         public string $renderedBody,
+        public ?string $headerImageUrl = null,
     ) {}
 
     public function envelope(): Envelope
@@ -30,7 +31,10 @@ class TemplatedMail extends Mailable
     {
         return new Content(
             markdown: 'mail.templated',
-            with: ['body' => $this->renderedBody],
+            with: [
+                'body' => $this->renderedBody,
+                'headerImageUrl' => $this->headerImageUrl,
+            ],
         );
     }
 }

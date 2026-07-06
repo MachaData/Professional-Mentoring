@@ -6,6 +6,7 @@ use App\Models\Concerns\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Translatable\HasTranslations;
 
 class EmailTemplate extends Model
@@ -21,12 +22,21 @@ class EmailTemplate extends Model
         return [
             'subject' => 'array',
             'body' => 'array',
+            'images' => 'array',
         ];
     }
 
     public function program(): BelongsTo
     {
         return $this->belongsTo(Program::class);
+    }
+
+    /** Absolute URL of the header/banner image, or null when none is set. */
+    public function headerImageUrl(): ?string
+    {
+        return $this->header_image
+            ? Storage::disk('public')->url($this->header_image)
+            : null;
     }
 
     /**

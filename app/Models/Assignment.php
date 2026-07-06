@@ -7,14 +7,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 class Assignment extends Model
 {
     use BelongsToOrganization, HasFactory;
 
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_PAUSED = 'paused';
+
     public const STATUS_FINISHED = 'finished';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     protected $guarded = ['id'];
@@ -55,18 +59,17 @@ class Assignment extends Model
 
     /**
      * The full session set for this dupla: the program curriculum plus its own
-     * extra sessions, ordered chronologically (by start date, then order).
+     * extra sessions, in program order (Sesión 1, 2, 3…). Ordering follows
+     * sort_order — never the creation date or id — with number and id as
+     * deterministic tie-breakers.
      *
-     * @return \Illuminate\Support\Collection<int,\App\Models\Session>
+     * @return Collection<int,Session>
      */
-    public function allSessions(): \Illuminate\Support\Collection
+    public function allSessions(): Collection
     {
         return $this->program->sessions
             ->concat($this->extraSessions)
-            ->sortBy([
-                fn ($s) => $s->start_date?->timestamp ?? PHP_INT_MAX,
-                fn ($s) => $s->sort_order,
-            ])
+            ->sortBy(fn ($s) => [$s->sort_order, $s->number ?? PHP_INT_MAX, $s->id])
             ->values();
     }
 

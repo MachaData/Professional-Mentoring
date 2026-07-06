@@ -5,8 +5,8 @@ namespace App\Filament\Resources\Sessions\Schemas;
 use App\Models\Stage;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -43,6 +43,10 @@ class SessionForm
                         TextInput::make('survey_url')->label('Link de encuesta')->url()
                             ->placeholder('https://forms.gle/…')->columnSpanFull()
                             ->helperText('Encuesta propia de esta sesión (Google Forms u otro).'),
+                        Select::make('form_template_id')->label('Plantilla de formulario')
+                            ->relationship('formTemplate', 'name')
+                            ->searchable()->preload()->columnSpanFull()
+                            ->helperText('Al crear la sesión se copiarán automáticamente los campos de la plantilla elegida (nombre, tipo, orden, obligatorio y visibilidad). Para reaplicarla al editar, usa el botón «Aplicar plantilla» en la sección de campos.'),
                     ]),
                 Section::make('Configuración')
                     ->columns(2)

@@ -3,11 +3,14 @@
 namespace App\Filament\Resources\EmailTemplates\Schemas;
 
 use App\Services\TemplateRenderer;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Text;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 
 class EmailTemplateForm
@@ -48,13 +51,45 @@ class EmailTemplateForm
                             ->options(['active' => 'Activa', 'inactive' => 'Inactiva'])->default('active')->required(),
                     ]),
 
-                Section::make('Contenido (ES / EN)')
+                Section::make('Imágenes')
+                    ->columns(2)
                     ->schema([
-                        Text::make('Variables disponibles: '.$vars),
-                        TextInput::make('subject.es')->label('Asunto (ES)')->required(),
-                        Textarea::make('body.es')->label('Cuerpo (ES)')->rows(6)->required(),
-                        TextInput::make('subject.en')->label('Subject (EN)')->required(),
-                        Textarea::make('body.en')->label('Body (EN)')->rows(6)->required(),
+                        FileUpload::make('header_image')->label('Imagen de cabecera / banner')
+                            ->image()->imageEditor()
+                            ->disk('public')->directory('email-templates')->visibility('public')
+                            ->maxSize(2048)
+                            ->helperText('Se muestra centrada en la parte superior del correo.'),
+                        FileUpload::make('images')->label('Imágenes para insertar en el cuerpo')
+                            ->image()->multiple()->reorderable()->appendFiles()
+                            ->disk('public')->directory('email-templates')->visibility('public')
+                            ->maxSize(2048)
+                            ->helperText('Súbelas aquí y, tras guardar, copia el Markdown ![imagen](URL) que aparece en la vista previa dentro del cuerpo del mensaje.'),
+                    ]),
+
+                Grid::make(2)
+                    ->schema([
+                        Section::make('Contenido (ES / EN)')
+                            ->schema([
+                                Text::make('Variables disponibles: '.$vars),
+                                TextInput::make('subject.es')->label('Asunto (ES)')->required()
+                                    ->live(onBlur: true),
+                                Textarea::make('body.es')->label('Cuerpo (ES)')->rows(8)->required()
+                                    ->live(onBlur: true)
+                                    ->helperText('Admite Markdown, incluidas imágenes: ![texto](URL).'),
+                                TextInput::make('subject.en')->label('Subject (EN)')->required()
+                                    ->live(onBlur: true),
+                                Textarea::make('body.en')->label('Body (EN)')->rows(8)->required()
+                                    ->live(onBlur: true),
+                            ]),
+
+                        Section::make('Vista previa')
+                            ->schema([
+                                Select::make('preview_locale')->label('Idioma de la vista previa')
+                                    ->options(['es' => 'Español', 'en' => 'English'])
+                                    ->default('es')->live()
+                                    ->dehydrated(false),
+                                View::make('filament.emails.preview'),
+                            ]),
                     ]),
             ]);
     }

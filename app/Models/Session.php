@@ -17,6 +17,18 @@ class Session extends Model
 
     public array $translatable = ['name', 'description', 'objective'];
 
+    protected static function booted(): void
+    {
+        // Keep sort_order aligned with the session number so every list shows
+        // Sesión 1, 2, 3… A sort_order of 0 means "unset" (the column default),
+        // e.g. sessions created from the admin form which has no order field.
+        static::saving(function (self $session) {
+            if (empty($session->sort_order) && ! empty($session->number)) {
+                $session->sort_order = $session->number;
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [
@@ -56,6 +68,12 @@ class Session extends Model
     public function stage(): BelongsTo
     {
         return $this->belongsTo(Stage::class);
+    }
+
+    /** The form template last applied to seed this session's fields (optional). */
+    public function formTemplate(): BelongsTo
+    {
+        return $this->belongsTo(FormTemplate::class);
     }
 
     public function customFields(): HasMany

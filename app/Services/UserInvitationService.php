@@ -7,6 +7,7 @@ use App\Mail\WelcomeInvitationMail;
 use App\Models\EmailLog;
 use App\Models\EmailTemplate;
 use App\Models\User;
+use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -43,7 +44,7 @@ class UserInvitationService
      * Prefer the editable "invitation" email template; fall back to the built-in
      * markdown mailable when none is configured.
      *
-     * @return array{0:\Illuminate\Mail\Mailable,1:string}
+     * @return array{0:Mailable,1:string}
      */
     protected function buildMail(User $user, string $temporaryPassword): array
     {
@@ -64,7 +65,7 @@ class UserInvitationService
             $subject = $renderer->render($template->getTranslation('subject', app()->getLocale()), $vars);
             $body = $renderer->render($template->getTranslation('body', app()->getLocale()), $vars);
 
-            return [new TemplatedMail($subject, $body), $subject];
+            return [new TemplatedMail($subject, $body, $template->headerImageUrl()), $subject];
         }
 
         $subject = __('Bienvenido a :app', ['app' => config('app.name')]);

@@ -3,19 +3,19 @@
 namespace App\Filament\Resources\Assignments\Pages;
 
 use App\Exports\ImportTemplateExport;
+use App\Filament\Concerns\HandlesExcelImport;
 use App\Filament\Resources\Assignments\AssignmentResource;
 use App\Imports\AssignmentsImport;
 use App\Models\Organization;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
-use Filament\Forms\Components\FileUpload;
-use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
-use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ListAssignments extends ListRecords
 {
+    use HandlesExcelImport;
+
     protected static string $resource = AssignmentResource::class;
 
     protected function getHeaderActions(): array
@@ -42,19 +42,13 @@ class ListAssignments extends ListRecords
                 ->visible(fn () => auth()->user()->canManageContent())
                 ->modalDescription('Sube el archivo con las columnas de la plantilla. Descárgala con el botón "Descargar plantilla".')
                 ->form([
-                    FileUpload::make('file')
-                        ->label('Archivo Excel')
-                        ->acceptedFileTypes([
-                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                            'application/vnd.ms-excel', 'text/csv',
-                        ])
-                        ->directory('imports')->storeFiles()->required(),
+                    $this->importFileUploadField(),
                 ])
-                ->action(function (array $data) use ($orgId) {
-                    $import = new AssignmentsImport($orgId);
-                    Excel::import($import, Storage::disk('public')->path($data['file']));
-                    Notification::make()->title("Asignaciones importadas: {$import->imported}")->success()->send();
-                }),
+                ->action(fn (array $data) => $this->runExcelImport(
+                    $data,
+                    new AssignmentsImport($orgId),
+                    'Asignaciones importadas',
+                )),
         ];
     }
 }

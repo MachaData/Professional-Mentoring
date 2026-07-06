@@ -77,9 +77,10 @@ class DispatchReminders extends Command
                 [$subjectTpl, $bodyTpl] = $this->copy($reminder);
                 $subject = $renderer->render($subjectTpl, $vars);
                 $body = $renderer->render($bodyTpl, $vars);
+                $headerUrl = $reminder->template?->headerImageUrl();
 
                 try {
-                    Mail::to($user->email)->send(new TemplatedMail($subject, $body));
+                    Mail::to($user->email)->send(new TemplatedMail($subject, $body, $headerUrl));
                     $status = 'sent';
                     $error = null;
                     $sent++;

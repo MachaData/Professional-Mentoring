@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Assignment;
 use App\Models\Program;
 use App\Models\Session;
-use App\Models\User;
+use App\Models\Stage;
 
 /**
  * Builds the variable bag for email copy and interpolates {{placeholders}}.
@@ -23,6 +23,30 @@ class TemplateRenderer
         ];
     }
 
+    /**
+     * Example values used for the live preview and the "send test" action, so the
+     * editor can see how the template reads before it is used officially.
+     *
+     * @return array<string,string>
+     */
+    public static function sampleVariables(): array
+    {
+        return [
+            'user_name' => 'Ana Torres',
+            'program_name' => 'Programa de Liderazgo 2026',
+            'session_name' => 'Sesión 3: Comunicación efectiva',
+            'stage_name' => 'Etapa 1: Diagnóstico',
+            'start_date' => '15/03/2026',
+            'end_date' => '30/06/2026',
+            'facilitator_name' => 'Carlos Méndez (mentor)',
+            'participant_name' => 'Lucía Fernández (mentee)',
+            'platform_link' => route('portal.login'),
+            'survey_link' => 'https://forms.gle/ejemplo',
+            'email' => 'ana.torres@ejemplo.com',
+            'temporary_password' => 'PM-Ab12cd',
+        ];
+    }
+
     /** @return array<string,string> */
     public function variables(array $context): array
     {
@@ -36,7 +60,7 @@ class TemplateRenderer
             'user_name' => $user?->name ?? '',
             'program_name' => $program instanceof Program ? $program->getTranslation('name', $locale) : '',
             'session_name' => $session instanceof Session ? $session->getTranslation('name', $locale) : '',
-            'stage_name' => $session?->stage instanceof \App\Models\Stage ? $session->stage->getTranslation('name', $locale) : '',
+            'stage_name' => $session?->stage instanceof Stage ? $session->stage->getTranslation('name', $locale) : '',
             'start_date' => $session?->start_date?->format('d/m/Y') ?? $program?->start_date?->format('d/m/Y') ?? '',
             'end_date' => $session?->end_date?->format('d/m/Y') ?? $program?->end_date?->format('d/m/Y') ?? '',
             'facilitator_name' => $assignment instanceof Assignment ? $assignment->facilitator?->name : ($context['facilitator_name'] ?? ''),
