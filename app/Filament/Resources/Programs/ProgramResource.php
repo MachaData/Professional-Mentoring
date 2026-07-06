@@ -7,6 +7,7 @@ use App\Filament\Resources\Programs\Pages\EditProgram;
 use App\Filament\Resources\Programs\Pages\ListPrograms;
 use App\Filament\Resources\Programs\RelationManagers\SessionsRelationManager;
 use App\Filament\Resources\Programs\RelationManagers\StagesRelationManager;
+use App\Filament\Resources\Programs\RelationManagers\WelcomePopupsRelationManager;
 use App\Filament\Resources\Programs\Schemas\ProgramForm;
 use App\Filament\Resources\Programs\Tables\ProgramsTable;
 use App\Models\Program;
@@ -51,6 +52,7 @@ class ProgramResource extends Resource
         return [
             StagesRelationManager::class,
             SessionsRelationManager::class,
+            WelcomePopupsRelationManager::class,
         ];
     }
 

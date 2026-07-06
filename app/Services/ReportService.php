@@ -189,7 +189,7 @@ class ReportService
         $today = Carbon::today();
 
         $allSessions = $this->scope(Session::query())
-            ->get(['id', 'program_id', 'assignment_id', 'number', 'name', 'sort_order', 'start_date', 'end_date'])
+            ->get(['id', 'program_id', 'assignment_id', 'number', 'name', 'sort_order', 'start_date', 'end_date', 'survey_url'])
             ->sortBy('sort_order');
 
         // Curriculum (program-wide) sessions per program + extras per dupla.
@@ -241,6 +241,25 @@ class ReportService
                     $category = $behind ? 'fuera' : 'dentro';
                 }
 
+                // Has a live pending session: the current one's window is open now.
+                $sessionPending = $current
+                    && (! $current->start_date || $current->start_date->lte($today))
+                    && (! $current->end_date || $current->end_date->gte($today));
+
+                // Survey pending (approximation — external forms have no response tracking):
+                // a started session that carries a survey link and is not yet completed.
+                $surveyPending = $sessions->contains(function (Session $session) use ($today, $recordsBySession) {
+                    if (blank($session->survey_url)) {
+                        return false;
+                    }
+                    if ($session->start_date && $session->start_date->gt($today)) {
+                        return false;
+                    }
+                    $record = $recordsBySession->get($session->id);
+
+                    return ! ($record && $record->status === SessionRecord::STATUS_COMPLETED);
+                });
+
                 return [
                     'assignment' => $assignment,
                     'total' => $total,
@@ -250,6 +269,8 @@ class ReportService
                     'current' => $current,               // Session|null (null = finished)
                     'expected' => $expected,             // Session|null
                     'days_behind' => (int) $daysBehind,
+                    'session_pending' => (bool) $sessionPending,
+                    'survey_pending' => (bool) $surveyPending,
                 ];
             });
     }

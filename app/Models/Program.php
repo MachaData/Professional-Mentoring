@@ -58,6 +58,11 @@ class Program extends Model
         return $this->hasMany(Assignment::class);
     }
 
+    public function welcomePopups(): HasMany
+    {
+        return $this->hasMany(WelcomePopup::class);
+    }
+
     /**
      * Visible facilitator label: program override → program type → fallback.
      */

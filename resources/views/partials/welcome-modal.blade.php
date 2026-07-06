@@ -1,19 +1,38 @@
 @php
+    use App\Services\WelcomePopupResolver;
+
     $user = auth()->user();
-    $org = $user?->organization;
     $locale = app()->getLocale();
-    $show = $user && ! $user->onboarding_seen_at && $org && $org->welcome_enabled
-        && ($org->getTranslation('welcome_text', $locale, false) || $org->welcome_video_url);
-    // Normalize a YouTube/Vimeo link to an embeddable URL.
+
+    $resolver = app(WelcomePopupResolver::class);
+    $popup = $resolver->resolve($user);
+
+    $show = false;
+    $title = __('¡Te damos la bienvenida!');
+    $bodyText = null;
     $embed = null;
-    if ($show && $org->welcome_video_url) {
+
+    if ($popup && $resolver->shouldShow($user, $popup)) {
+        // Per-program, per-role popup (preferred).
+        $show = true;
+        $title = $popup->getTranslation('title', $locale, false) ?: $title;
+        $bodyText = $popup->getTranslation('body', $locale, false);
+        $embed = $popup->embedUrl();
+    } elseif ($user && ! $user->onboarding_seen_at && ($org = $user->organization)
+        && $org->welcome_enabled
+        && ($org->getTranslation('welcome_text', $locale, false) || $org->welcome_video_url)) {
+        // Legacy organization-wide popup (backwards compatible).
+        $show = true;
+        $bodyText = $org->getTranslation('welcome_text', $locale, false);
         $u = $org->welcome_video_url;
-        if (preg_match('~(?:youtube\.com/watch\?v=|youtu\.be/)([\w-]+)~', $u, $m)) {
-            $embed = 'https://www.youtube.com/embed/'.$m[1];
-        } elseif (preg_match('~vimeo\.com/(\d+)~', $u, $m)) {
-            $embed = 'https://player.vimeo.com/video/'.$m[1];
-        } else {
-            $embed = $u;
+        if ($u) {
+            if (preg_match('~(?:youtube\.com/watch\?v=|youtu\.be/)([\w-]+)~', $u, $m)) {
+                $embed = 'https://www.youtube.com/embed/'.$m[1];
+            } elseif (preg_match('~vimeo\.com/(\d+)~', $u, $m)) {
+                $embed = 'https://player.vimeo.com/video/'.$m[1];
+            } else {
+                $embed = $u;
+            }
         }
     }
 @endphp
@@ -27,7 +46,7 @@
                 <div class="relative">
                     <p class="text-sm text-white/70">{{ config('app.name') }}</p>
                     <h2 class="mt-0.5 text-xl font-bold text-white">
-                        {{ __('¡Te damos la bienvenida!') }}
+                        {{ $title }}
                     </h2>
                 </div>
             </div>
@@ -41,9 +60,9 @@
                     </div>
                 @endif
 
-                @if($org->getTranslation('welcome_text', $locale, false))
+                @if($bodyText)
                     <div class="prose prose-sm max-w-none text-slate-600">
-                        {!! nl2br(e($org->getTranslation('welcome_text', $locale))) !!}
+                        {!! nl2br(e($bodyText)) !!}
                     </div>
                 @endif
             </div>
