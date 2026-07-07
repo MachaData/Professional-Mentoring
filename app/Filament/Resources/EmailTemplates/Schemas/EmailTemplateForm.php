@@ -22,6 +22,7 @@ class EmailTemplateForm
             ->map(fn ($v) => '{{'.$v.'}}')->implode(', ');
 
         return $schema
+            ->columns(1)
             ->components([
                 Section::make('Plantilla de correo')
                     ->columns(2)
@@ -49,20 +50,18 @@ class EmailTemplateForm
                             ->helperText('Vacío = aplica a toda la organización.'),
                         Select::make('status')->label('Estado')
                             ->options(['active' => 'Activa', 'inactive' => 'Inactiva'])->default('active')->required(),
-                    ]),
-
-                Section::make('Imagen de cabecera')
-                    ->schema([
                         FileUpload::make('header_image')->label('Imagen de cabecera / banner')
                             ->image()->imageEditor()
                             ->disk('public')->directory('email-templates')->visibility('public')
                             ->maxSize(2048)
-                            ->helperText('Se muestra centrada en la parte superior del correo. Para imágenes dentro del texto, usa el botón de imagen del editor.'),
+                            ->columnSpanFull()
+                            ->helperText('Opcional. Se muestra centrada en la parte superior del correo. Para imágenes dentro del texto, usa el botón de imagen del editor.'),
                     ]),
 
-                Grid::make(2)
+                Grid::make(['default' => 1, 'lg' => 3])
                     ->schema([
                         Section::make('Contenido (ES / EN)')
+                            ->columnSpan(['default' => 1, 'lg' => 2])
                             ->schema([
                                 Text::make('Variables disponibles: '.$vars),
                                 TextInput::make('subject.es')->label('Asunto (ES)')->required()
@@ -74,6 +73,7 @@ class EmailTemplateForm
                             ]),
 
                         Section::make('Vista previa')
+                            ->columnSpan(['default' => 1, 'lg' => 1])
                             ->schema([
                                 Select::make('preview_locale')->label('Idioma de la vista previa')
                                     ->options(['es' => 'Español', 'en' => 'English'])
