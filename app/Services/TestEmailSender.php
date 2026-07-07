@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Mail\TemplatedMail;
+use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -24,10 +25,26 @@ class TestEmailSender
         $vars = TemplateRenderer::sampleVariables();
 
         $subject = '[PRUEBA] '.$this->renderer->render((string) data_get($state, "subject.$locale", ''), $vars);
-        $body = $this->renderer->render((string) data_get($state, "body.$locale", ''), $vars);
+        $body = $this->renderer->render($this->bodyToHtml(data_get($state, "body.$locale")), $vars);
         $headerUrl = $this->resolveUrl(data_get($state, 'header_image'));
 
         Mail::to($to)->send(new TemplatedMail($subject, $body, $headerUrl));
+    }
+
+    /**
+     * The RichEditor's raw form state is a TipTap document (array), while saved
+     * bodies are HTML strings. Normalise both to HTML before interpolation.
+     */
+    private function bodyToHtml(mixed $value): string
+    {
+        if (is_array($value)) {
+            return (string) RichContentRenderer::make($value)
+                ->fileAttachmentsDisk('public')
+                ->fileAttachmentsVisibility('public')
+                ->toHtml();
+        }
+
+        return (string) $value;
     }
 
     /**
