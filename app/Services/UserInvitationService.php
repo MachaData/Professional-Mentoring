@@ -64,6 +64,7 @@ class UserInvitationService
             ];
             $subject = $renderer->render($template->getTranslation('subject', app()->getLocale()), $vars);
             $body = $renderer->render($template->getTranslation('body', app()->getLocale()), $vars);
+            $body = $this->ensureCredentials($body, $user->email, $temporaryPassword);
 
             return [new TemplatedMail($subject, $body, $template->headerImageUrl()), $subject];
         }
@@ -71,6 +72,23 @@ class UserInvitationService
         $subject = __('Bienvenido a :app', ['app' => config('app.name')]);
 
         return [new WelcomeInvitationMail($user, $temporaryPassword, $loginUrl), $subject];
+    }
+
+    /**
+     * Guarantee the invitation carries the login credentials, appending them when
+     * the template copy doesn't already include the temporary password.
+     */
+    protected function ensureCredentials(string $body, string $email, string $temporaryPassword): string
+    {
+        if (str_contains($body, $temporaryPassword)) {
+            return $body;
+        }
+
+        $block = app()->getLocale() === 'en'
+            ? "\n\n**Your access details:**\n- Email: {$email}\n- Temporary password: {$temporaryPassword}\n\nYou'll be asked to change it on your first login."
+            : "\n\n**Tus datos de acceso:**\n- Correo: {$email}\n- Contraseña temporal: {$temporaryPassword}\n\nSe te pedirá cambiarla en tu primer ingreso.";
+
+        return $body.$block;
     }
 
     protected function generatePassword(): string

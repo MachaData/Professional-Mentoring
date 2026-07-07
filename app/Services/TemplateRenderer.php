@@ -20,6 +20,8 @@ class TemplateRenderer
             'user_name', 'program_name', 'session_name', 'stage_name',
             'start_date', 'end_date', 'facilitator_name', 'participant_name',
             'platform_link', 'survey_link',
+            // Only populated for invitation emails:
+            'email', 'temporary_password',
         ];
     }
 

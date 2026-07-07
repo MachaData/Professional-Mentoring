@@ -18,14 +18,8 @@
 
         <form method="POST" action="{{ route('password.change.update') }}" class="mt-6 space-y-4">
             @csrf
-            <div>
-                <label class="pm-label">{{ __('Nueva contraseña') }}</label>
-                <input type="password" name="password" required class="pm-input">
-            </div>
-            <div>
-                <label class="pm-label">{{ __('Confirmar contraseña') }}</label>
-                <input type="password" name="password_confirmation" required class="pm-input">
-            </div>
+            @include('partials.password-field', ['name' => 'password', 'label' => __('Nueva contraseña'), 'placeholder' => ''])
+            @include('partials.password-field', ['name' => 'password_confirmation', 'label' => __('Confirmar contraseña'), 'placeholder' => ''])
             <button type="submit" class="pm-btn-brand w-full">{{ __('Guardar y continuar') }}</button>
         </form>
     </div>

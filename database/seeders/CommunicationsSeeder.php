@@ -24,9 +24,9 @@ class CommunicationsSeeder extends Seeder
 
         $this->template($org->id, 'invitation', 'Invitación de acceso',
             'Bienvenido/a a {{program_name}}',
-            "Hola {{user_name}},\n\nSe ha creado tu acceso a la plataforma. Ingresa con tu correo y la contraseña temporal que te compartimos.\n\nAccede aquí: {{platform_link}}\n\nSaludos.",
+            "Hola {{user_name}},\n\nSe ha creado tu acceso a la plataforma.\n\n**Tus datos de acceso:**\n- Correo: {{email}}\n- Contraseña temporal: {{temporary_password}}\n\nAccede aquí: {{platform_link}}\n\nSe te pedirá cambiarla en tu primer ingreso.\n\nSaludos.",
             'Welcome to {{program_name}}',
-            "Hi {{user_name}},\n\nYour access has been created. Sign in with your email and the temporary password we shared.\n\nAccess here: {{platform_link}}\n\nBest regards.");
+            "Hi {{user_name}},\n\nYour access has been created.\n\n**Your access details:**\n- Email: {{email}}\n- Temporary password: {{temporary_password}}\n\nAccess here: {{platform_link}}\n\nYou'll be asked to change it on your first login.\n\nBest regards.");
 
         $this->template($org->id, 'welcome', 'Bienvenida al programa',
             '¡Comienza tu programa de mentoring!',

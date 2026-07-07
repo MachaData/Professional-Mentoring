@@ -81,6 +81,12 @@
                 @if($tenant){{ $brandName }} · @endif{{ __('Accede a tu programa de acompañamiento') }}
             </p>
 
+            @if(session('status'))
+                <div class="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                    {{ session('status') }}
+                </div>
+            @endif
+
             @if($errors->any())
                 <div class="mt-6 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800">
                     {{ $errors->first() }}
@@ -93,14 +99,16 @@
                     <label class="pm-label">{{ __('Correo') }}</label>
                     <input type="email" name="email" value="{{ old('email') }}" required autofocus class="pm-input" placeholder="tu@correo.com">
                 </div>
-                <div>
-                    <label class="pm-label">{{ __('Contraseña') }}</label>
-                    <input type="password" name="password" required class="pm-input" placeholder="••••••••">
+                @include('partials.password-field', ['name' => 'password', 'label' => __('Contraseña')])
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 text-sm text-slate-600">
+                        <input type="checkbox" name="remember" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                        {{ __('Recordarme') }}
+                    </label>
+                    <a href="{{ route('password.request') }}" class="text-sm font-medium text-brand-600 hover:text-brand-700">
+                        {{ __('¿Olvidaste tu contraseña?') }}
+                    </a>
                 </div>
-                <label class="flex items-center gap-2 text-sm text-slate-600">
-                    <input type="checkbox" name="remember" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
-                    {{ __('Recordarme') }}
-                </label>
                 <button type="submit" class="pm-btn-brand w-full" style="background-color: {{ $primary }}">{{ __('Ingresar') }}</button>
             </form>
 

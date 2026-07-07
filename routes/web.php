@@ -1,11 +1,11 @@
 <?php
 
 use App\Http\Controllers\Auth\ChangePasswordController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\PortalLoginController;
 use App\Http\Controllers\Mentor\MentorController;
 use App\Http\Controllers\Participant\ParticipantController;
 use App\Http\Middleware\SetLocale;
-use App\Models\SessionRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -30,6 +30,12 @@ Route::get('/locale/{locale}', function (Request $request, string $locale) {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [PortalLoginController::class, 'show'])->name('portal.login');
     Route::post('/login', [PortalLoginController::class, 'login'])->name('portal.login.attempt');
+
+    // Self-service password recovery.
+    Route::get('/password/forgot', [PasswordResetController::class, 'showLinkRequest'])->name('password.request');
+    Route::post('/password/forgot', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+    Route::get('/password/reset/{token}', [PasswordResetController::class, 'showReset'])->name('password.reset');
+    Route::post('/password/reset', [PasswordResetController::class, 'reset'])->name('password.update');
 });
 
 Route::middleware('auth')->group(function () {
