@@ -4,8 +4,8 @@ namespace App\Filament\Resources\EmailTemplates\Schemas;
 
 use App\Services\TemplateRenderer;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -51,19 +51,13 @@ class EmailTemplateForm
                             ->options(['active' => 'Activa', 'inactive' => 'Inactiva'])->default('active')->required(),
                     ]),
 
-                Section::make('Imágenes')
-                    ->columns(2)
+                Section::make('Imagen de cabecera')
                     ->schema([
                         FileUpload::make('header_image')->label('Imagen de cabecera / banner')
                             ->image()->imageEditor()
                             ->disk('public')->directory('email-templates')->visibility('public')
                             ->maxSize(2048)
-                            ->helperText('Se muestra centrada en la parte superior del correo.'),
-                        FileUpload::make('images')->label('Imágenes para insertar en el cuerpo')
-                            ->image()->multiple()->reorderable()->appendFiles()
-                            ->disk('public')->directory('email-templates')->visibility('public')
-                            ->maxSize(2048)
-                            ->helperText('Súbelas aquí y, tras guardar, copia el Markdown ![imagen](URL) que aparece en la vista previa dentro del cuerpo del mensaje.'),
+                            ->helperText('Se muestra centrada en la parte superior del correo. Para imágenes dentro del texto, usa el botón de imagen del editor.'),
                     ]),
 
                 Grid::make(2)
@@ -73,13 +67,10 @@ class EmailTemplateForm
                                 Text::make('Variables disponibles: '.$vars),
                                 TextInput::make('subject.es')->label('Asunto (ES)')->required()
                                     ->live(onBlur: true),
-                                Textarea::make('body.es')->label('Cuerpo (ES)')->rows(8)->required()
-                                    ->live(onBlur: true)
-                                    ->helperText('Admite Markdown, incluidas imágenes: ![texto](URL).'),
+                                self::bodyEditor('body.es', 'Cuerpo (ES)'),
                                 TextInput::make('subject.en')->label('Subject (EN)')->required()
                                     ->live(onBlur: true),
-                                Textarea::make('body.en')->label('Body (EN)')->rows(8)->required()
-                                    ->live(onBlur: true),
+                                self::bodyEditor('body.en', 'Body (EN)'),
                             ]),
 
                         Section::make('Vista previa')
@@ -92,5 +83,23 @@ class EmailTemplateForm
                             ]),
                     ]),
             ]);
+    }
+
+    /** Rich text editor for an email body (bold, lists, headings, links, images). */
+    protected static function bodyEditor(string $name, string $label): RichEditor
+    {
+        return RichEditor::make($name)->label($label)->required()
+            ->live(onBlur: true)
+            ->toolbarButtons([
+                ['bold', 'italic', 'underline', 'strike', 'link'],
+                ['h2', 'h3'],
+                ['alignStart', 'alignCenter', 'alignEnd'],
+                ['blockquote', 'bulletList', 'orderedList'],
+                ['attachFiles'],
+                ['undo', 'redo'],
+            ])
+            ->fileAttachmentsDisk('public')
+            ->fileAttachmentsVisibility('public')
+            ->helperText('Da formato con la barra: negrita, listas, títulos, enlaces e imágenes. Inserta variables como {{user_name}} escribiéndolas en el texto.');
     }
 }

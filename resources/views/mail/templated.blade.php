@@ -4,5 +4,5 @@
 <img src="{{ $headerImageUrl }}" alt="" style="max-width:100%;height:auto;border-radius:6px;">
 </p>
 @endif
-{!! \Illuminate\Support\Str::markdown($body) !!}
+{!! \App\Services\TemplateRenderer::toHtml($body) !!}
 @endcomponent

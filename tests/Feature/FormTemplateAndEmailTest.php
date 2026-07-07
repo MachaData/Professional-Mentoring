@@ -10,6 +10,7 @@ use App\Models\FormTemplate;
 use App\Models\Program;
 use App\Models\Session;
 use App\Services\FormTemplateApplier;
+use App\Services\TemplateRenderer;
 use App\Services\TestEmailSender;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -127,6 +128,19 @@ class FormTemplateAndEmailTest extends TestCase
                 && str_starts_with($mail->renderedSubject, '[PRUEBA]')
                 && str_contains($mail->renderedBody, 'Programa de Liderazgo 2026');
         });
+    }
+
+    public function test_to_html_handles_both_rich_html_and_legacy_markdown(): void
+    {
+        // Rich editor content (already HTML) is returned untouched.
+        $html = '<p>Hola <strong>Ana</strong></p>';
+        $this->assertSame($html, TemplateRenderer::toHtml($html));
+
+        // Legacy Markdown is converted to HTML.
+        $out = TemplateRenderer::toHtml('Hola **Ana**');
+        $this->assertStringContainsString('<strong>Ana</strong>', $out);
+
+        $this->assertSame('', TemplateRenderer::toHtml(''));
     }
 
     public function test_email_template_header_image_url_is_absolute_or_null(): void

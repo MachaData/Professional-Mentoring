@@ -6,6 +6,7 @@ use App\Models\Assignment;
 use App\Models\Program;
 use App\Models\Session;
 use App\Models\Stage;
+use Illuminate\Support\Str;
 
 /**
  * Builds the variable bag for email copy and interpolates {{placeholders}}.
@@ -77,5 +78,24 @@ class TemplateRenderer
         return preg_replace_callback('/\{\{\s*(\w+)\s*\}\}/', function ($m) use ($variables) {
             return $variables[$m[1]] ?? $m[0];
         }, $text);
+    }
+
+    /**
+     * Convert a template body to HTML for display/sending. New bodies come from the
+     * rich editor (already HTML); legacy bodies are Markdown — detected by the
+     * absence of HTML tags — and converted on the fly.
+     */
+    public static function toHtml(?string $body): string
+    {
+        $body = (string) $body;
+
+        if (trim($body) === '') {
+            return '';
+        }
+
+        // Contains HTML tags → already rich content; otherwise treat as Markdown.
+        return $body !== strip_tags($body)
+            ? $body
+            : (string) Str::markdown($body);
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\Program;
 use App\Models\Reminder;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 /**
  * Default (editable) email templates and reminders. All copy uses {{variables}}
@@ -58,7 +59,8 @@ class CommunicationsSeeder extends Seeder
             [
                 'name' => $name,
                 'subject' => ['es' => $subEs, 'en' => $subEn],
-                'body' => ['es' => $bodyEs, 'en' => $bodyEn],
+                // Stored as HTML for the rich text editor.
+                'body' => ['es' => (string) Str::markdown($bodyEs), 'en' => (string) Str::markdown($bodyEn)],
                 'status' => 'active',
             ]
         );

@@ -64,6 +64,7 @@ class UserInvitationService
             ];
             $subject = $renderer->render($template->getTranslation('subject', app()->getLocale()), $vars);
             $body = $renderer->render($template->getTranslation('body', app()->getLocale()), $vars);
+            $body = TemplateRenderer::toHtml($body); // normalize (rich HTML or legacy Markdown)
             $body = $this->ensureCredentials($body, $user->email, $temporaryPassword);
 
             return [new TemplatedMail($subject, $body, $template->headerImageUrl()), $subject];
@@ -85,8 +86,8 @@ class UserInvitationService
         }
 
         $block = app()->getLocale() === 'en'
-            ? "\n\n**Your access details:**\n- Email: {$email}\n- Temporary password: {$temporaryPassword}\n\nYou'll be asked to change it on your first login."
-            : "\n\n**Tus datos de acceso:**\n- Correo: {$email}\n- Contraseña temporal: {$temporaryPassword}\n\nSe te pedirá cambiarla en tu primer ingreso.";
+            ? "<p><strong>Your access details:</strong></p><ul><li>Email: {$email}</li><li>Temporary password: {$temporaryPassword}</li></ul><p>You'll be asked to change it on your first login.</p>"
+            : "<p><strong>Tus datos de acceso:</strong></p><ul><li>Correo: {$email}</li><li>Contraseña temporal: {$temporaryPassword}</li></ul><p>Se te pedirá cambiarla en tu primer ingreso.</p>";
 
         return $body.$block;
     }
