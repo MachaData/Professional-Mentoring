@@ -74,7 +74,7 @@ class OrganizationForm
                     ->description('Se muestra una sola vez a cada usuario al ingresar. Usa el texto de bienvenida de arriba.')
                     ->columns(2)
                     ->schema([
-                        Toggle::make('welcome_enabled')->label('Mostrar popup de bienvenida')->default(true),
+                        Toggle::make('welcome_enabled')->label('Mostrar popup de bienvenida')->default(false),
                         TextInput::make('welcome_video_url')->label('Link de video (YouTube / Vimeo)')
                             ->url()->placeholder('https://www.youtube.com/watch?v=…'),
                     ]),
