@@ -115,4 +115,20 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Global "Reply-To" Address
+    |--------------------------------------------------------------------------
+    |
+    | Replies to platform emails go here. The "from" address can be a no-reply
+    | on an authenticated domain (best deliverability), while replies still
+    | reach a real inbox. Applied globally in AppServiceProvider.
+    |
+    */
+
+    'reply_to' => [
+        'address' => env('MAIL_REPLY_TO_ADDRESS', 'mentoring@crosspartnersgroup.com'),
+        'name' => env('MAIL_REPLY_TO_NAME', env('MAIL_FROM_NAME', env('APP_NAME', 'Professional Mentoring'))),
+    ],
+
 ];
