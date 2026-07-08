@@ -9,10 +9,25 @@ use App\Http\Middleware\SetLocale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 Route::get('/', fn () => Auth::check()
     ? redirect()->to(PortalLoginController::homeFor(Auth::user()))
     : redirect()->route('portal.login'));
+
+// --- Public storage files ---------------------------------------------------
+// Serve files from the "public" disk (storage/app/public) through Laravel
+// instead of the public/storage symlink. The symlink breaks under
+// `php artisan serve` (PHP's built-in server returns 403 for symlinks that
+// escape the document root), and it needs no symlink under nginx or a mounted
+// volume either. Keeps every existing Storage::url() link (/storage/...) working.
+Route::get('/storage/{path}', function (string $path) {
+    // Guard against path traversal before touching the disk.
+    abort_if(str_contains($path, '..'), 404);
+    abort_unless(Storage::disk('public')->exists($path), 404);
+
+    return Storage::disk('public')->response($path);
+})->where('path', '.*')->name('storage.public');
 
 // --- Locale switch ----------------------------------------------------------
 Route::get('/locale/{locale}', function (Request $request, string $locale) {
@@ -55,6 +70,7 @@ Route::middleware(['auth', 'password.changed', 'role:facilitator'])
     ->prefix('mentor')->group(function () {
         Route::get('/', [MentorController::class, 'dashboard'])->name('mentor.dashboard');
         Route::get('/calendario', [MentorController::class, 'calendar'])->name('mentor.calendar');
+        Route::get('/ayuda', [MentorController::class, 'help'])->name('mentor.help');
         Route::get('/participants/{assignment}', [MentorController::class, 'participant'])->name('mentor.participant');
         Route::get('/participants/{assignment}/espacio', [MentorController::class, 'space'])->name('mentor.space');
         Route::get('/records/{record}/register', [MentorController::class, 'register'])->name('mentor.register');
@@ -65,6 +81,7 @@ Route::middleware(['auth', 'password.changed', 'role:participant'])
     ->prefix('me')->group(function () {
         Route::get('/', [ParticipantController::class, 'dashboard'])->name('participant.dashboard');
         Route::get('/calendario', [ParticipantController::class, 'calendar'])->name('participant.calendar');
+        Route::get('/ayuda', [ParticipantController::class, 'help'])->name('participant.help');
         Route::get('/espacio', [ParticipantController::class, 'space'])->name('participant.space');
         Route::get('/sessions/{session}', [ParticipantController::class, 'session'])->name('participant.session');
     });

@@ -33,7 +33,10 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Serve disabled: it auto-registers a /storage/{path} route that
+            // shadows the public-disk files (served from app/public) and 403s.
+            // Public files are served by the /storage route in routes/web.php.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],
