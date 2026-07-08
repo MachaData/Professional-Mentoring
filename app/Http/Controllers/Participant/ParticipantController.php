@@ -14,6 +14,11 @@ use Illuminate\Support\Collection;
 
 class ParticipantController extends Controller
 {
+    public function help(Request $request)
+    {
+        return view('participant.help', ['participant' => $request->user()]);
+    }
+
     public function dashboard(Request $request)
     {
         $participant = $request->user();

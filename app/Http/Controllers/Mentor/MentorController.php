@@ -8,6 +8,7 @@ use App\Models\SessionRecord;
 use App\Services\CalendarService;
 use App\Services\ResourceResolver;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class MentorController extends Controller
 {
@@ -136,7 +137,7 @@ class MentorController extends Controller
     }
 
     /** @return array{0:string,1:string,2:string} prev, next, today month URLs */
-    protected function monthLinks(string $route, \Illuminate\Support\Carbon $month): array
+    protected function monthLinks(string $route, Carbon $month): array
     {
         return [
             route($route, ['m' => $month->copy()->subMonthNoOverflow()->format('Y-m')]),
@@ -157,6 +158,11 @@ class MentorController extends Controller
         $assignment = $record->assignment;
 
         return view('mentor.register', compact('record', 'tools', 'surveyUrl', 'assignment'));
+    }
+
+    public function help(Request $request)
+    {
+        return view('mentor.help', ['facilitator' => $request->user()]);
     }
 
     /** A pending/draft record whose session window has passed is "expired". */
