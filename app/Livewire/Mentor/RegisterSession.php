@@ -20,8 +20,11 @@ class RegisterSession extends Component
 
     /** Structured fields tied to this dupla's record. */
     public ?string $realSessionDate = null;
+
     public string $attendance = 'pending';
+
     public ?string $modality = null;
+
     public ?string $meetingUrl = null;
 
     /** @var array<string,mixed> Dynamic custom-field values. */
@@ -29,7 +32,7 @@ class RegisterSession extends Component
 
     public function mount(SessionRecord $record): void
     {
-        abort_unless($record->facilitator_id === auth()->id(), 403);
+        $this->authorizeRecord($record);
 
         $this->record = $record;
         // Format the date as a plain Y-m-d string so <input type=date> shows it.
@@ -99,8 +102,21 @@ class RegisterSession extends Component
         $this->redirectRoute('mentor.participant', $this->record->assignment_id ?? $this->resolveAssignmentId());
     }
 
+    /**
+     * Guard both on mount and on every write: Livewire requests never re-enter
+     * the controller, so a page opened before a session was locked could
+     * otherwise still submit against it.
+     */
+    protected function authorizeRecord(SessionRecord $record): void
+    {
+        abort_unless($record->facilitator_id === auth()->id(), 403);
+        abort_unless($record->session->isEnterableBy(auth()->user()), 403);
+    }
+
     protected function persist(string $status): void
     {
+        $this->authorizeRecord($this->record);
+
         $fields = $this->fields;
         $state = $this->data;
 

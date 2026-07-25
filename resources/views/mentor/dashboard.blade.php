@@ -47,9 +47,8 @@
 <div class="mt-4 grid gap-3 sm:grid-cols-2">
     @forelse ($assignments as $assignment)
         @php
-            $total = $assignment->records->count();
-            $done = $assignment->records->where('status', 'completed')->count();
-            $pct = $total ? round($done / $total * 100) : 0;
+            // Counts already exclude sessions hidden from the mentor or still locked.
+            ['total' => $total, 'done' => $done, 'percent' => $pct] = $progress[$assignment->id];
             $initials = collect(explode(' ', $assignment->participant->name))->take(2)->map(fn ($p) => mb_substr($p, 0, 1))->implode('');
         @endphp
         <a href="{{ route('mentor.participant', $assignment) }}" class="pm-card pm-card-hover group flex items-center gap-4 p-5">

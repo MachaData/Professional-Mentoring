@@ -37,8 +37,11 @@ class Session extends Model
             'objective' => 'array',
             'start_date' => 'date',
             'end_date' => 'date',
+            'unlock_at' => 'date',
             'requires_registration' => 'boolean',
             'visible_to_participant' => 'boolean',
+            'visible_to_facilitator' => 'boolean',
+            'is_locked' => 'boolean',
         ];
     }
 
@@ -57,6 +60,24 @@ class Session extends Model
     public function scopeProgramWide($query)
     {
         return $query->whereNull('assignment_id');
+    }
+
+    /**
+     * Sessions a non-admin audience may see: the session itself is not
+     * deactivated *and* its stage (if any) is active. Deactivating either one
+     * takes the session out of the portals, the reports and the schedule, while
+     * admins query without this scope and still see everything.
+     *
+     * Note 'finished' is not 'inactive': a closed session stays on the record.
+     */
+    public function scopeAvailableToAudience($query)
+    {
+        return $query
+            ->where('status', '!=', 'inactive')
+            ->where(function ($q) {
+                $q->whereNull('stage_id')
+                    ->orWhereHas('stage', fn ($s) => $s->where('status', '!=', 'inactive'));
+            });
     }
 
     /** True when this session is an extra added for a specific dupla. */
@@ -93,5 +114,80 @@ class Session extends Model
 
         return (! $this->start_date || $today->gte($this->start_date))
             && (! $this->end_date || $today->lte($this->end_date));
+    }
+
+    // ---- Progressive access --------------------------------------------
+
+    /**
+     * A locked session cannot be opened by mentor or mentee. It stays locked
+     * until an admin turns the flag off, or until the configured unlock_at
+     * date arrives — whichever happens first. Without unlock_at the only way
+     * out is the manual toggle.
+     */
+    public function isLocked(): bool
+    {
+        if (! $this->is_locked) {
+            return false;
+        }
+
+        return ! ($this->unlock_at && now()->startOfDay()->gte($this->unlock_at));
+    }
+
+    /**
+     * True when this session belongs to no stage, or to an active one. A session
+     * on a deactivated stage is hidden from mentor and mentee alike (see
+     * {@see isVisibleTo()}) and dropped from reports. Relies on the `stage`
+     * relation, so eager-load it wherever this runs over a collection.
+     */
+    public function stageIsActive(): bool
+    {
+        return $this->stage_id === null || (bool) $this->stage?->isActive();
+    }
+
+    /**
+     * Switched off by an admin, directly or through its stage. Deactivating is
+     * the "does not exist for the audience" switch; locking (below) is the
+     * "not yet" one. 'finished' is not 'inactive' — a closed session stays
+     * visible as part of the record.
+     */
+    public function isDeactivated(): bool
+    {
+        return $this->status === 'inactive' || ! $this->stageIsActive();
+    }
+
+    /**
+     * Does this role see the session at all? Hidden means "does not exist".
+     * A deactivated session — or one on a deactivated stage — is hidden from
+     * mentor and mentee alike. Admins, coordinators and clients never reach
+     * this method for that gate: reports and the schedule exclude deactivated
+     * sessions through {@see scopeAvailableToAudience()}.
+     */
+    public function isVisibleTo(string $role): bool
+    {
+        if ($this->isDeactivated()) {
+            return $role !== User::ROLE_PARTICIPANT && $role !== User::ROLE_FACILITATOR;
+        }
+
+        return match ($role) {
+            User::ROLE_PARTICIPANT => (bool) $this->visible_to_participant,
+            User::ROLE_FACILITATOR => (bool) $this->visible_to_facilitator,
+            default => true,
+        };
+    }
+
+    /** Listed for this role, but not enterable yet — rendered as "Próximamente". */
+    public function isComingSoonFor(string $role): bool
+    {
+        return $this->isVisibleTo($role) && $this->isLocked();
+    }
+
+    /**
+     * The single gate for opening a session: the user's role must see it and it
+     * must not be locked. Every entry point (session detail, session registration,
+     * shared files) checks this rather than re-deriving the two conditions.
+     */
+    public function isEnterableBy(User $user): bool
+    {
+        return $this->isVisibleTo($user->role) && ! $this->isLocked();
     }
 }

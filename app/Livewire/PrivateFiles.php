@@ -3,8 +3,10 @@
 namespace App\Livewire;
 
 use App\Models\Assignment;
+use App\Models\Session;
 use App\Models\SharedFile;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -19,14 +21,21 @@ class PrivateFiles extends Component
     use WithFileUploads;
 
     public Assignment $assignment;
+
     public ?int $sessionId = null;
 
     public bool $showForm = false;
+
     public string $title = '';
+
     public string $kind = 'file';        // file | link | text
+
     public $upload;
+
     public ?string $externalUrl = null;
+
     public ?string $bodyText = null;
+
     public ?string $targetSessionId = null; // only used in general scope
 
     public function mount(Assignment $assignment, ?int $sessionId = null): void
@@ -46,9 +55,17 @@ class PrivateFiles extends Component
             ->get();
     }
 
+    /**
+     * Only sessions the viewer may actually open. Otherwise the picker would
+     * name sessions that are hidden from their role or still locked.
+     *
+     * @return Collection<int,Session>
+     */
     public function getSessionsProperty(): Collection
     {
-        return $this->assignment->program->sessions()->orderBy('sort_order')->get();
+        return $this->assignment->program->sessions()->with('stage')->orderBy('sort_order')->get()
+            ->filter(fn (Session $session) => $session->isEnterableBy(auth()->user()))
+            ->values();
     }
 
     public function save(): void
@@ -60,6 +77,8 @@ class PrivateFiles extends Component
                 'mimes:pdf,doc,docx,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif,webp'],
             'externalUrl' => ['nullable', 'url'],
             'bodyText' => ['nullable', 'string', 'max:5000'],
+            // The picker already hides these, but the value arrives from the client.
+            'targetSessionId' => ['nullable', Rule::in($this->sessions->pluck('id')->all())],
         ]);
 
         // Session scope is fixed when embedded in a session; otherwise optional.

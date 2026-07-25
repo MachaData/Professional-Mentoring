@@ -83,6 +83,12 @@ class Assignment extends Model
         return $this->hasMany(Message::class)->oldest();
     }
 
+    /** Team follow-up history (contacts/actions) for this dupla. */
+    public function followups(): HasMany
+    {
+        return $this->hasMany(AssignmentFollowup::class)->latest('contacted_at')->latest('id');
+    }
+
     /** Is this user part of the dupla? */
     public function involves(User $user): bool
     {

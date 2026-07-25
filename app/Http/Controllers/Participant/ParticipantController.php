@@ -34,18 +34,19 @@ class ParticipantController extends Controller
 
         if ($assignment) {
             $resolver = app(ResourceResolver::class);
-            $sidebarTools = $resolver->programTools($assignment->program, 'participant');
+            $sidebarTools = $resolver->programTools($assignment->program, $participant);
 
             $records = $assignment->records->keyBy('session_id');
 
             $sessions = $assignment->allSessions()
-                ->where('visible_to_participant', true)
-                ->map(function ($session) use ($records, $resolver) {
+                ->filter(fn (Session $session) => $session->isVisibleTo($participant->role))
+                ->map(function (Session $session) use ($records, $resolver, $participant) {
                     $record = $records->get($session->id);
+                    $locked = $session->isLocked();
 
                     // Only fields flagged visible to participant, from completed records.
                     $visible = collect();
-                    if ($record && $record->status === SessionRecord::STATUS_COMPLETED) {
+                    if (! $locked && $record && $record->status === SessionRecord::STATUS_COMPLETED) {
                         $visible = $record->values
                             ->filter(fn ($v) => $v->customField?->is_visible_to_participant)
                             ->map(fn ($v) => [
@@ -56,15 +57,18 @@ class ParticipantController extends Controller
                             ->values();
                     }
 
+                    // A locked session is a teaser: name, dates and nothing else.
                     return [
                         'session' => $session,
                         'record' => $record,
+                        'locked' => $locked,
                         'visible_values' => $visible,
-                        'meeting_url' => $record?->meeting_url,
-                        'survey_url' => $session->survey_url,
-                        'tools' => $resolver->sessionTools($session, 'participant'),
+                        'meeting_url' => $locked ? null : $record?->meeting_url,
+                        'survey_url' => $locked ? null : $session->survey_url,
+                        'tools' => $locked ? collect() : $resolver->sessionTools($session, $participant),
                     ];
-                });
+                })
+                ->values();
         }
 
         return view('participant.dashboard', compact('participant', 'assignment', 'sessions', 'sidebarTools'));
@@ -87,7 +91,7 @@ class ParticipantController extends Controller
 
         $assignment = Assignment::query()
             ->where('participant_id', $participant->id)
-            ->with(['program.sessions', 'extraSessions', 'records'])
+            ->with(['program.sessions.stage', 'extraSessions.stage', 'records'])
             ->latest()
             ->first();
 
@@ -101,7 +105,7 @@ class ParticipantController extends Controller
             $records = $assignment->records->keyBy('session_id');
 
             $sessions = $assignment->allSessions()
-                ->where('visible_to_participant', true)
+                ->filter(fn (Session $s) => $s->isVisibleTo($participant->role))
                 ->values();
 
             $statusBySession = $sessions
@@ -111,7 +115,8 @@ class ParticipantController extends Controller
             $events = $calendar->events(
                 $sessions,
                 $statusBySession,
-                fn ($session) => route('participant.session', $session),
+                // Locked sessions stay on the calendar but are not clickable.
+                fn (Session $session) => $session->isLocked() ? null : route('participant.session', $session),
             );
 
             $stats['total'] = $sessions->count();
@@ -119,6 +124,11 @@ class ParticipantController extends Controller
                 $status = $statusBySession[$session->id];
                 if ($status === SessionRecord::STATUS_COMPLETED) {
                     $stats['completed']++;
+                } elseif ($session->isLocked()) {
+                    // "Próximamente" is always pending, never expired — the mentee
+                    // was never able to attend it. It cannot be the highlighted
+                    // "next" session either, since that link opens the session.
+                    $stats['pending']++;
                 } elseif ($session->end_date && $session->end_date->lt($today)) {
                     $stats['expired']++;
                 } else {
@@ -149,7 +159,8 @@ class ParticipantController extends Controller
             ->where('program_id', $session->program_id)
             ->firstOrFail();
 
-        abort_unless($session->visible_to_participant, 403);
+        // Hidden, or visible but still locked ("Próximamente") — never enterable.
+        abort_unless($session->isEnterableBy($participant), 403);
         // Extra (per-dupla) sessions may only be opened by their own dupla.
         abort_unless($session->assignment_id === null || $session->assignment_id === $assignment->id, 403);
 
@@ -167,7 +178,7 @@ class ParticipantController extends Controller
                 ->values();
         }
 
-        $tools = app(ResourceResolver::class)->sessionTools($session, 'participant');
+        $tools = app(ResourceResolver::class)->sessionTools($session, $participant);
 
         return view('participant.session', compact('participant', 'assignment', 'session', 'record', 'visible', 'tools'));
     }

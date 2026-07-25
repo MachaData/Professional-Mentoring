@@ -54,7 +54,18 @@ class SessionForm
                         DatePicker::make('start_date')->label('Fecha de inicio'),
                         DatePicker::make('end_date')->label('Fecha de fin'),
                         Toggle::make('requires_registration')->label('Requiere registro')->default(true),
-                        Toggle::make('visible_to_participant')->label('Visible para participante')->default(true),
+                    ]),
+                Section::make('Visibilidad y acceso')
+                    ->description('Quién ve la sesión y desde cuándo puede ingresar.')
+                    ->columns(2)
+                    ->schema([
+                        Toggle::make('visible_to_participant')->label('Visible para el mentee')->default(true),
+                        Toggle::make('visible_to_facilitator')->label('Visible para el mentor')->default(true),
+                        Toggle::make('is_locked')->label('Bloqueada')->default(false)->live()
+                            ->helperText('Si además es visible, se muestra como «Próximamente» y nadie puede ingresar.'),
+                        DatePicker::make('unlock_at')->label('Se desbloquea el')->native(false)
+                            ->visible(fn (Get $get) => (bool) $get('is_locked'))
+                            ->helperText('Opcional. Al llegar esta fecha la sesión se abre sola.'),
                     ]),
             ]);
     }

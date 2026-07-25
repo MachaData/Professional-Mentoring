@@ -65,38 +65,60 @@
             <div class="space-y-3">
                 @foreach ($sessions as $row)
                     @php
-                        $session = $row['session']; $record = $row['record']; $done = $record && $record->status === 'completed';
-                        $att = $record?->attendance ?? 'pending';
+                        $session = $row['session']; $record = $row['record']; $locked = $row['locked'];
+                        $done = ! $locked && $record && $record->status === 'completed';
+                        $att = $locked ? 'pending' : ($record?->attendance ?? 'pending');
                     @endphp
-                    <div class="pm-card pm-card-hover p-5">
+                    <div class="pm-card p-5 {{ $locked ? 'opacity-75' : 'pm-card-hover' }}">
                         <div class="flex items-start justify-between gap-3">
-                            <a href="{{ route('participant.session', $session) }}" class="flex items-start gap-3">
+                            {{-- Locked sessions are teasers: no link anywhere. --}}
+                            @if($locked)
+                                <div class="flex items-start gap-3">
+                            @else
+                                <a href="{{ route('participant.session', $session) }}" class="flex items-start gap-3">
+                            @endif
                                 <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl font-display text-xs font-bold {{ $done ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500' }}">
                                     {{ $done ? '✓' : 'S'.$session->number }}
                                 </span>
                                 <div>
-                                    <div class="font-semibold text-slate-900">{{ $session->getTranslation('name', $locale) }}</div>
+                                    <div class="font-semibold {{ $locked ? 'text-slate-500' : 'text-slate-900' }}">{{ $session->getTranslation('name', $locale) }}</div>
                                     <p class="text-sm text-slate-500">{{ $session->getTranslation('objective', $locale) }}</p>
+                                    @if($locked && $session->unlock_at)
+                                        <p class="mt-1 text-xs text-slate-400">{{ __('Se desbloquea el') }} {{ $session->unlock_at->format('d/m/Y') }}</p>
+                                    @endif
                                 </div>
-                            </a>
+                            @if($locked)
+                                </div>
+                            @else
+                                </a>
+                            @endif
                             <div class="flex flex-col items-end gap-1">
-                                @if(! empty($att) && $att !== 'pending')
-                                    <span class="pm-pill ring-1 {{ ['attended'=>'bg-emerald-50 text-emerald-700 ring-emerald-200','absent'=>'bg-rose-50 text-rose-700 ring-rose-200','rescheduled'=>'bg-amber-50 text-amber-700 ring-amber-200'][$att] ?? 'bg-slate-100 text-slate-600 ring-slate-200' }}">
-                                        {{ __(App\Models\SessionRecord::ATTENDANCE[$att] ?? 'Pendiente') }}
+                                @if($locked)
+                                    <span class="pm-pill inline-flex items-center gap-1 ring-1 bg-slate-100 text-slate-500 ring-slate-200">
+                                        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+                                        {{ __('Próximamente') }}
                                     </span>
-                                @elseif($session->start_date)
-                                    <span class="whitespace-nowrap text-xs text-slate-400">{{ $session->start_date->format('d/m') }} – {{ $session->end_date?->format('d/m') }}</span>
+                                @else
+                                    @if(! empty($att) && $att !== 'pending')
+                                        <span class="pm-pill ring-1 {{ ['attended'=>'bg-emerald-50 text-emerald-700 ring-emerald-200','absent'=>'bg-rose-50 text-rose-700 ring-rose-200','rescheduled'=>'bg-amber-50 text-amber-700 ring-amber-200'][$att] ?? 'bg-slate-100 text-slate-600 ring-slate-200' }}">
+                                            {{ __(App\Models\SessionRecord::ATTENDANCE[$att] ?? 'Pendiente') }}
+                                        </span>
+                                    @elseif($session->start_date)
+                                        <span class="whitespace-nowrap text-xs text-slate-400">{{ $session->start_date->format('d/m') }} – {{ $session->end_date?->format('d/m') }}</span>
+                                    @endif
+                                    <a href="{{ route('participant.session', $session) }}" class="text-xs font-medium text-brand-600 hover:text-brand-700">{{ __('Ver sesión') }} →</a>
                                 @endif
-                                <a href="{{ route('participant.session', $session) }}" class="text-xs font-medium text-brand-600 hover:text-brand-700">{{ __('Ver sesión') }} →</a>
                             </div>
                         </div>
 
-                        @include('partials.session-resources', [
-                            'meetingUrl' => $row['meeting_url'],
-                            'sessTools' => $row['tools'],
-                            'surveyUrl' => $row['survey_url'],
-                            'mode' => 'mentee',
-                        ])
+                        @unless($locked)
+                            @include('partials.session-resources', [
+                                'meetingUrl' => $row['meeting_url'],
+                                'sessTools' => $row['tools'],
+                                'surveyUrl' => $row['survey_url'],
+                                'mode' => 'mentee',
+                            ])
+                        @endunless
 
                         @if($row['visible_values']->isNotEmpty())
                             <div class="mt-4 rounded-xl bg-slate-50 p-4">

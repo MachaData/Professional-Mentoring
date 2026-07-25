@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Session;
+use App\Models\User;
 use App\Services\CalendarService;
 use App\Services\ReportService;
 use BackedEnum;
@@ -25,23 +26,29 @@ class Calendar extends Page
     protected static ?int $navigationSort = 2;
 
     public Carbon $month;
+
     /** @var array<string,array<int,array<string,mixed>>> */
     public array $events = [];
+
     /** @var array<string,int> */
     public array $counts = [];
+
     public string $prevUrl = '';
+
     public string $nextUrl = '';
+
     public string $todayUrl = '';
 
-    /** Superadmin, org-admin and coordinator can see the schedule. */
+    /** Superadmin, org-admin, coordinator and read-only client can see the schedule. */
     public static function canAccess(): bool
     {
         $user = auth()->user();
 
         return $user && in_array($user->role, [
-            \App\Models\User::ROLE_SUPERADMIN,
-            \App\Models\User::ROLE_ORG_ADMIN,
-            \App\Models\User::ROLE_COORDINATOR,
+            User::ROLE_SUPERADMIN,
+            User::ROLE_ORG_ADMIN,
+            User::ROLE_COORDINATOR,
+            User::ROLE_CLIENT,
         ], true);
     }
 
@@ -49,8 +56,13 @@ class Calendar extends Page
     {
         $this->month = $calendar->month(request()->query('m'));
 
-        // All org sessions (auto-scoped); each program's schedule shown once.
-        $sessions = Session::query()->orderBy('sort_order')->get();
+        // All org sessions (auto-scoped); each program's schedule shown once,
+        // in program order. Deactivated sessions — and those on a deactivated
+        // stage — stay on the schedule only for admins; coordinators and
+        // clients never see them.
+        $sessions = Session::query()
+            ->when(! auth()->user()?->canManageContent(), fn ($q) => $q->availableToAudience())
+            ->orderBy('sort_order')->get();
         $this->events = $calendar->events($sessions);
 
         $duplas = ReportService::forUser(auth()->user())->duplasBySchedule();

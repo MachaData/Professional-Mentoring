@@ -63,8 +63,11 @@
                         @php
                             $session = $row['session'];
                             $status = $row['status'];
-                            [$badgeClass, $badgeLabel] = $badges[$status] ?? $badges['pending'];
-                            $dot = $status === 'completed' ? 'bg-emerald-500' : ($status === 'expired' ? 'bg-rose-500' : 'bg-slate-300');
+                            $locked = $row['locked'];
+                            [$badgeClass, $badgeLabel] = $locked
+                                ? ['bg-slate-100 text-slate-500 ring-slate-200', __('Próximamente')]
+                                : ($badges[$status] ?? $badges['pending']);
+                            $dot = $locked ? 'bg-slate-200' : ($status === 'completed' ? 'bg-emerald-500' : ($status === 'expired' ? 'bg-rose-500' : 'bg-slate-300'));
                         @endphp
                         <div class="relative">
                             <span class="absolute -left-[27px] top-5 h-3 w-3 rounded-full ring-4 ring-slate-50 {{ $dot }}"></span>
@@ -83,8 +86,14 @@
                                                 {{ $session->start_date->format('d/m/Y') }} – {{ $session->end_date?->format('d/m/Y') }}
                                             </p>
                                         @endif
+                                        @if($locked && $session->unlock_at)
+                                            <p class="mt-1.5 flex items-center gap-1.5 text-xs text-slate-400">
+                                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+                                                {{ __('Se desbloquea el') }} {{ $session->unlock_at->format('d/m/Y') }}
+                                            </p>
+                                        @endif
                                         @php $rec = $row['record']; $att = $rec?->attendance; @endphp
-                                        @if($rec && ((! empty($att) && $att !== 'pending') || $rec->modality))
+                                        @if(! $locked && $rec && ((! empty($att) && $att !== 'pending') || $rec->modality))
                                             <div class="mt-2 flex flex-wrap gap-1.5">
                                                 @if(! empty($att) && $att !== 'pending')
                                                     <span class="pm-pill ring-1 {{ ['attended'=>'bg-emerald-50 text-emerald-700 ring-emerald-200','absent'=>'bg-rose-50 text-rose-700 ring-rose-200','rescheduled'=>'bg-amber-50 text-amber-700 ring-amber-200'][$att] ?? 'bg-slate-100 text-slate-600 ring-slate-200' }}">
@@ -97,7 +106,12 @@
                                             </div>
                                         @endif
                                     </div>
-                                    @if($row['record'])
+                                    @if($locked)
+                                        <span class="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-400">
+                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+                                            {{ __('Bloqueada') }}
+                                        </span>
+                                    @elseif($row['record'])
                                         <a href="{{ route('mentor.register', $row['record']) }}"
                                            class="{{ $status === 'completed' ? 'pm-btn-ghost' : 'pm-btn-brand' }} shrink-0">
                                             {{ $status === 'completed' ? __('Ver / editar') : __('Registrar') }}
@@ -105,12 +119,14 @@
                                     @endif
                                 </div>
 
-                                @include('partials.session-resources', [
-                                    'meetingUrl' => $row['meeting_url'],
-                                    'sessTools' => $row['tools'],
-                                    'surveyUrl' => $row['survey_url'],
-                                    'mode' => 'mentor',
-                                ])
+                                @unless($locked)
+                                    @include('partials.session-resources', [
+                                        'meetingUrl' => $row['meeting_url'],
+                                        'sessTools' => $row['tools'],
+                                        'surveyUrl' => $row['survey_url'],
+                                        'mode' => 'mentor',
+                                    ])
+                                @endunless
                             </div>
                         </div>
                     @endforeach

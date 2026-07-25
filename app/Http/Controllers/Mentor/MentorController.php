@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Mentor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Assignment;
+use App\Models\Session;
 use App\Models\SessionRecord;
 use App\Services\CalendarService;
 use App\Services\ResourceResolver;
@@ -18,7 +19,7 @@ class MentorController extends Controller
 
         $assignments = Assignment::query()
             ->where('facilitator_id', $facilitator->id)
-            ->with(['participant', 'program', 'records'])
+            ->with(['participant', 'program.sessions.stage', 'extraSessions.stage', 'records'])
             ->get();
 
         $stats = [
@@ -28,9 +29,36 @@ class MentorController extends Controller
             'expired' => 0,
         ];
 
+        $progress = [];
+
         foreach ($assignments as $assignment) {
+            $sessions = $assignment->allSessions()->keyBy('id');
+            $total = 0;
+            $done = 0;
+
             foreach ($assignment->records as $record) {
-                $status = $this->effectiveStatus($record, $assignment);
+                $session = $sessions->get($record->session_id);
+
+                // Hidden from the mentor means it does not exist for them.
+                if (! $session || ! $session->isVisibleTo($facilitator->role)) {
+                    continue;
+                }
+
+                // The progress bar spans the whole visible curriculum. A locked
+                // session is work still ahead, not work that disappeared —
+                // dropping it would push the bar to 100% mid-programme.
+                $total++;
+                $status = $this->effectiveStatus($record, $session);
+                if ($status === SessionRecord::STATUS_COMPLETED) {
+                    $done++;
+                }
+
+                // The counters above the bar are about what the mentor can act on
+                // right now, so a locked session contributes to none of them.
+                if ($session->isLocked()) {
+                    continue;
+                }
+
                 if ($status === SessionRecord::STATUS_COMPLETED) {
                     $stats['completed']++;
                 } elseif ($status === SessionRecord::STATUS_EXPIRED) {
@@ -39,35 +67,49 @@ class MentorController extends Controller
                     $stats['pending']++;
                 }
             }
+
+            $progress[$assignment->id] = [
+                'total' => $total,
+                'done' => $done,
+                'percent' => $total ? (int) round($done / $total * 100) : 0,
+            ];
         }
 
-        return view('mentor.dashboard', compact('facilitator', 'assignments', 'stats'));
+        return view('mentor.dashboard', compact('facilitator', 'assignments', 'stats', 'progress'));
     }
 
     public function participant(Request $request, Assignment $assignment)
     {
-        abort_unless($assignment->facilitator_id === $request->user()->id, 403);
+        $facilitator = $request->user();
+        abort_unless($assignment->facilitator_id === $facilitator->id, 403);
 
         $assignment->load(['participant', 'program.sessions.stage', 'extraSessions.stage']);
 
         $records = $assignment->records()->get()->keyBy('session_id');
         $resolver = app(ResourceResolver::class);
 
-        $sessions = $assignment->allSessions()->map(function ($session) use ($records, $assignment, $resolver) {
-            $record = $records->get($session->id);
+        $sessions = $assignment->allSessions()
+            ->filter(fn (Session $session) => $session->isVisibleTo($facilitator->role))
+            ->map(function (Session $session) use ($records, $resolver, $facilitator) {
+                $record = $records->get($session->id);
+                $locked = $session->isLocked();
 
-            return [
-                'session' => $session,
-                'record' => $record,
-                'status' => $record ? $this->effectiveStatus($record, $assignment) : SessionRecord::STATUS_PENDING,
-                'meeting_url' => $record?->meeting_url,
-                'survey_url' => $session->survey_url,
-                'tools' => $resolver->sessionTools($session, 'facilitator'),
-            ];
-        });
+                // A locked session shows as "Próximamente": no resources, no
+                // meeting link, no registration.
+                return [
+                    'session' => $session,
+                    'record' => $record,
+                    'locked' => $locked,
+                    'status' => $record ? $this->effectiveStatus($record, $session) : SessionRecord::STATUS_PENDING,
+                    'meeting_url' => $locked ? null : $record?->meeting_url,
+                    'survey_url' => $locked ? null : $session->survey_url,
+                    'tools' => $locked ? collect() : $resolver->sessionTools($session, $facilitator),
+                ];
+            })
+            ->values();
 
         // Program-wide materials for the right sidebar (surveys live per session).
-        $sidebarTools = $resolver->programTools($assignment->program, 'facilitator');
+        $sidebarTools = $resolver->programTools($assignment->program, $facilitator);
 
         return view('mentor.participant', compact('assignment', 'sessions', 'sidebarTools'));
     }
@@ -87,14 +129,16 @@ class MentorController extends Controller
 
         $assignments = Assignment::query()
             ->where('facilitator_id', $facilitator->id)
-            ->with(['participant:id,name', 'program.sessions', 'extraSessions', 'records'])
+            ->with(['participant:id,name', 'program.sessions.stage', 'extraSessions.stage', 'records'])
             ->get();
 
-        // Calendar events: every dupla's sessions (program curriculum + extras),
-        // deduped. Per-dupla progress lives in the table below.
+        // Calendar events: every dupla's sessions (program curriculum + extras)
+        // that this mentor may see, deduped. Per-dupla progress lives in the
+        // table below.
         $sessions = $assignments
             ->flatMap(fn ($a) => $a->allSessions())
             ->unique('id')
+            ->filter(fn (Session $s) => $s->isVisibleTo($facilitator->role))
             ->sortBy('sort_order')
             ->values();
 
@@ -102,8 +146,10 @@ class MentorController extends Controller
         $events = $calendar->events($sessions);
 
         // Basic indicators — one row per dupla.
-        $rows = $assignments->map(function (Assignment $assignment) {
-            $sessions = $assignment->allSessions();
+        $rows = $assignments->map(function (Assignment $assignment) use ($facilitator) {
+            $sessions = $assignment->allSessions()
+                ->filter(fn (Session $s) => $s->isVisibleTo($facilitator->role))
+                ->values();
             $recordsBySession = $assignment->records->keyBy('session_id');
             $total = $sessions->count();
 
@@ -113,13 +159,22 @@ class MentorController extends Controller
                 $record = $recordsBySession->get($session->id);
                 if ($record && $record->status === SessionRecord::STATUS_COMPLETED) {
                     $completed++;
-                } elseif ($current === null) {
+                } elseif ($current === null && ! $session->isLocked()) {
+                    // A locked session is never the mentor's "current" one — they
+                    // cannot act on it, so it must not drive the overdue flag.
                     $current = $session;
                 }
             }
 
             $overdue = $current && $current->end_date && $current->end_date->isPast();
-            $state = $completed === $total ? 'done' : ($completed === 0 ? 'sin_inicio' : ($overdue ? 'fuera' : 'dentro'));
+            // Guard the empty case: without it 0 === 0 reads as "Finalizado" for a
+            // dupla whose sessions are all still hidden.
+            $state = match (true) {
+                $total === 0, $completed === 0 => 'sin_inicio',
+                $completed === $total => 'done',
+                $overdue => 'fuera',
+                default => 'dentro',
+            };
 
             return [
                 'assignment' => $assignment,
@@ -148,12 +203,16 @@ class MentorController extends Controller
 
     public function register(Request $request, SessionRecord $record)
     {
-        abort_unless($record->facilitator_id === $request->user()->id, 403);
+        $facilitator = $request->user();
+        abort_unless($record->facilitator_id === $facilitator->id, 403);
 
         $record->load('session.stage', 'assignment');
+
+        abort_unless($record->session->isEnterableBy($facilitator), 403);
+
         $resolver = app(ResourceResolver::class);
 
-        $tools = $resolver->sessionTools($record->session, 'facilitator');
+        $tools = $resolver->sessionTools($record->session, $facilitator);
         $surveyUrl = $record->session->survey_url;
         $assignment = $record->assignment;
 
@@ -166,11 +225,10 @@ class MentorController extends Controller
     }
 
     /** A pending/draft record whose session window has passed is "expired". */
-    protected function effectiveStatus(SessionRecord $record, Assignment $assignment): string
+    protected function effectiveStatus(SessionRecord $record, ?Session $session): string
     {
         if (in_array($record->status, [SessionRecord::STATUS_PENDING, SessionRecord::STATUS_DRAFT], true)) {
-            $session = $assignment->program->sessions->firstWhere('id', $record->session_id)
-                ?? $record->session;
+            $session ??= $record->session;
             if ($session?->end_date && $session->end_date->isPast()) {
                 return SessionRecord::STATUS_EXPIRED;
             }

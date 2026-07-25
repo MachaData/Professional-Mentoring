@@ -34,4 +34,14 @@ class Stage extends Model
     {
         return $this->hasMany(Session::class)->orderBy('sort_order');
     }
+
+    /**
+     * An inactive stage is switched off by the admin: its sessions disappear
+     * from the mentor and mentee portals, from the coordinator's reports and
+     * from the schedule. Only content-managing admins keep seeing them.
+     */
+    public function isActive(): bool
+    {
+        return $this->status !== 'inactive';
+    }
 }

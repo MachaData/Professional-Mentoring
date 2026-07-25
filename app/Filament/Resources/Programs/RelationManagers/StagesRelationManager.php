@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Programs\RelationManagers;
 
+use App\Models\Stage;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -9,8 +11,8 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\ColorColumn;
@@ -52,7 +54,8 @@ class StagesRelationManager extends RelationManager
                 ColorColumn::make('color')->label('Color'),
                 TextColumn::make('sessions_count')->label('Sesiones')->counts('sessions')->badge()->color('info'),
                 TextColumn::make('status')->label('Estado')->badge()
-                    ->color(fn ($state) => $state === 'active' ? 'success' : 'gray'),
+                    ->formatStateUsing(fn ($state) => $state === 'inactive' ? 'Inactiva' : 'Activa')
+                    ->color(fn ($state) => $state === 'inactive' ? 'gray' : 'success'),
             ])
             ->headerActions([
                 CreateAction::make()
@@ -63,6 +66,19 @@ class StagesRelationManager extends RelationManager
                     }),
             ])
             ->recordActions([
+                // Quick switch: deactivating a stage hides its sessions from the
+                // mentor and mentee portals, from the coordinator's reports and
+                // from the schedule — admins keep seeing them.
+                Action::make('toggleStatus')
+                    ->label(fn (Stage $record) => $record->isActive() ? 'Desactivar' : 'Activar')
+                    ->icon(fn (Stage $record) => $record->isActive() ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
+                    ->color(fn (Stage $record) => $record->isActive() ? 'gray' : 'success')
+                    ->requiresConfirmation()
+                    ->modalDescription(fn (Stage $record) => $record->isActive()
+                        ? 'Las sesiones de esta etapa dejarán de verse para mentores, participantes y en los reportes.'
+                        : 'Las sesiones de esta etapa volverán a verse para todos.')
+                    ->action(fn (Stage $record) => $record
+                        ->update(['status' => $record->isActive() ? 'inactive' : 'active'])),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

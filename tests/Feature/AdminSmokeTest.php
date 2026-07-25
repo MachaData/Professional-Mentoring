@@ -2,8 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\Assignments\Pages\ViewAssignment;
+use App\Filament\Resources\Assignments\RelationManagers\ExtraSessionsRelationManager;
+use App\Filament\Resources\Programs\Pages\EditProgram;
+use App\Filament\Resources\Programs\RelationManagers\SessionsRelationManager;
+use App\Models\Assignment;
+use App\Models\FormTemplate;
+use App\Models\Organization;
+use App\Models\Program;
+use App\Models\Session;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class AdminSmokeTest extends TestCase
@@ -38,8 +48,8 @@ class AdminSmokeTest extends TestCase
     public function test_session_and_template_field_managers_render(): void
     {
         $u = User::where('email', 'superadmin@pro-mentoring.com')->firstOrFail();
-        $session = \App\Models\Session::firstOrFail();
-        $template = \App\Models\FormTemplate::firstOrFail();
+        $session = Session::firstOrFail();
+        $template = FormTemplate::firstOrFail();
 
         $this->actingAs($u)->get("/admin/sessions/{$session->getKey()}/edit")->assertSuccessful();
         $this->actingAs($u)->get("/admin/form-templates/{$template->getKey()}/edit")->assertSuccessful();
@@ -48,14 +58,66 @@ class AdminSmokeTest extends TestCase
     public function test_program_edit_with_relation_managers_renders(): void
     {
         $u = User::where('email', 'superadmin@pro-mentoring.com')->firstOrFail();
-        $program = \App\Models\Program::firstOrFail();
+        $program = Program::firstOrFail();
 
         $this->actingAs($u)->get("/admin/programs/{$program->getKey()}/edit")->assertSuccessful();
     }
 
+    public function test_assignment_view_with_relation_managers_renders(): void
+    {
+        $u = User::where('email', 'superadmin@pro-mentoring.com')->firstOrFail();
+        $assignment = Assignment::firstOrFail();
+
+        $this->actingAs($u)->get("/admin/assignments/{$assignment->getKey()}")->assertSuccessful();
+        $this->actingAs($u)->get("/admin/assignments/{$assignment->getKey()}/edit")->assertSuccessful();
+    }
+
+    /** Relation-manager tables are lazy Livewire components — mount them directly. */
+    public function test_extra_sessions_table_shows_the_lock_state(): void
+    {
+        $u = User::where('email', 'superadmin@pro-mentoring.com')->firstOrFail();
+        $assignment = Assignment::firstOrFail();
+
+        $assignment->extraSessions()->create([
+            'organization_id' => $assignment->organization_id,
+            'program_id' => $assignment->program_id,
+            'name' => ['es' => 'Sesión extra', 'en' => 'Extra session'],
+            'number' => 99,
+            'sort_order' => 999,
+            'is_locked' => true,
+        ]);
+
+        $this->actingAs($u);
+
+        Livewire::test(
+            ExtraSessionsRelationManager::class,
+            [
+                'ownerRecord' => $assignment,
+                'pageClass' => ViewAssignment::class,
+            ],
+        )->assertSuccessful()->assertSee('Bloqueada');
+    }
+
+    public function test_program_sessions_table_shows_the_lock_state(): void
+    {
+        $u = User::where('email', 'superadmin@pro-mentoring.com')->firstOrFail();
+        $program = Program::firstOrFail();
+        $program->sessions()->firstOrFail()->update(['is_locked' => true]);
+
+        $this->actingAs($u);
+
+        Livewire::test(
+            SessionsRelationManager::class,
+            [
+                'ownerRecord' => $program,
+                'pageClass' => EditProgram::class,
+            ],
+        )->assertSuccessful()->assertSee('Bloqueada');
+    }
+
     public function test_las_bambas_program_seeded_with_four_stages_and_ten_sessions(): void
     {
-        $program = \App\Models\Program::where('slug', 'professional-mentoring-las-bambas')->firstOrFail();
+        $program = Program::where('slug', 'professional-mentoring-las-bambas')->firstOrFail();
 
         $this->assertSame(4, $program->stages()->count());
         $this->assertSame(10, $program->sessions()->count());
@@ -71,7 +133,7 @@ class AdminSmokeTest extends TestCase
 
     public function test_facilitator_cannot_access_admin_panel(): void
     {
-        $org = \App\Models\Organization::first();
+        $org = Organization::first();
         $facilitator = User::factory()->create([
             'organization_id' => $org->id,
             'role' => User::ROLE_FACILITATOR,
