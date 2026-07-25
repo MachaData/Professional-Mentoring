@@ -134,6 +134,7 @@
             <ol class="mt-4 space-y-3" style="counter-reset: step">
                 <x-doc-step>Abre el <strong>Buzón</strong> del participante.</x-doc-step>
                 <x-doc-step>Redacta un <strong>asunto</strong> y un <strong>mensaje</strong> (hasta 5000 caracteres); si quieres, añade un <strong>adjunto</strong> (archivo de hasta 10 MB).</x-doc-step>
+                <x-doc-step>Si el mensaje es sobre una sesión concreta, elígela en <strong>«Sesión relacionada»</strong>. Es opcional: si lo dejas vacío queda como mensaje general de la dupla.</x-doc-step>
                 <x-doc-step>Envía. Puedes filtrar por <strong>«No leídos»</strong> y ver el contador de mensajes sin leer.</x-doc-step>
             </ol>
             <p class="mt-3">Úsalo para coordinar horarios, resolver dudas o dar seguimiento entre sesiones.</p>

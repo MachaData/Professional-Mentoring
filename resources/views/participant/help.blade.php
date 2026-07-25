@@ -138,6 +138,7 @@
             <ol class="mt-4 space-y-3" style="counter-reset: step">
                 <x-doc-step>Abre el <strong>Buzón</strong> desde tu panel.</x-doc-step>
                 <x-doc-step>Para escribir, redacta un <strong>asunto</strong> y tu <strong>mensaje</strong> (hasta 5000 caracteres) y, si quieres, añade un <strong>adjunto</strong> (archivo de hasta 10 MB).</x-doc-step>
+                <x-doc-step>Si tu mensaje es sobre una sesión concreta, elígela en <strong>«Sesión relacionada»</strong>. Es opcional.</x-doc-step>
                 <x-doc-step>Envía. Tu mentor lo verá y podrá responderte. Puedes filtrar por <strong>«No leídos»</strong> y verás un contador de mensajes sin leer.</x-doc-step>
             </ol>
             <p class="mt-3">Úsalo para dudas, coordinar horarios o compartir avances entre sesiones.</p>

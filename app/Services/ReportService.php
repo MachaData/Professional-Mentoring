@@ -3,9 +3,12 @@
 namespace App\Services;
 
 use App\Models\Assignment;
+use App\Models\AssignmentFollowup;
+use App\Models\Message;
 use App\Models\Program;
 use App\Models\Session;
 use App\Models\SessionRecord;
+use App\Models\SharedFile;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -16,11 +19,30 @@ use Illuminate\Support\Collection;
  */
 class ReportService
 {
-    public function __construct(protected ?int $organizationId = null) {}
+    /**
+     * @param  bool  $includeDeactivated  Content-managing admins keep seeing
+     *                                    deactivated sessions and those on a
+     *                                    deactivated stage; every other viewer
+     *                                    (coordinator, client) has them excluded
+     *                                    from every metric.
+     */
+    public function __construct(
+        protected ?int $organizationId = null,
+        protected bool $includeDeactivated = true,
+    ) {}
 
     public static function forUser(?User $user): self
     {
-        return new self($user && ! $user->isSuperadmin() ? $user->organization_id : null);
+        return new self(
+            $user && ! $user->isSuperadmin() ? $user->organization_id : null,
+            $user ? $user->canManageContent() : true,
+        );
+    }
+
+    /** Drop deactivated sessions unless the viewer is a content-managing admin. */
+    protected function scopeAvailable($query)
+    {
+        return $this->includeDeactivated ? $query : $query->availableToAudience();
     }
 
     protected function scope($query, string $column = 'organization_id')
@@ -51,6 +73,7 @@ class ReportService
     public function sessionStats(): array
     {
         $records = $this->scope(SessionRecord::query())
+            ->when(! $this->includeDeactivated, fn ($q) => $q->whereHas('session', fn ($s) => $s->availableToAudience()))
             ->with('session:id,end_date')
             ->get(['id', 'status', 'session_id']);
 
@@ -126,7 +149,7 @@ class ReportService
     {
         $today = Carbon::today();
 
-        return $this->scope(Session::query())
+        return $this->scopeAvailable($this->scope(Session::query()))
             ->whereNull('assignment_id') // curriculum only; per-dupla extras excluded
             ->with(['records', 'program:id,name'])
             ->orderBy('program_id')->orderBy('sort_order')
@@ -154,6 +177,73 @@ class ReportService
                     'percent' => $total ? (int) round($completed / $total * 100) : 0,
                 ];
             });
+    }
+
+    /**
+     * Per-session breakdown counted over EVERY dupla of the program, grouped by
+     * program. Unlike {@see progressBySession()} — which only looks at existing
+     * records — this counts the full dupla roster, so a dupla that has no record
+     * yet still shows up as "pendiente". For each curriculum session:
+     *
+     *   - realizadas: duplas whose record for the session is completed
+     *   - vencidas:   not completed and the session window has closed (past end_date)
+     *   - pendientes: not completed and still within schedule (or no deadline)
+     *
+     * By construction realizadas + vencidas + pendientes = total de duplas, e.g.
+     * "Sesión 1: total 52, realizadas 5, vencidas 6, pendientes 41". Cancelled
+     * duplas are excluded from the universe (they are no longer part of the run).
+     *
+     * @return Collection<int,array{
+     *     program:Program,
+     *     total_duplas:int,
+     *     sessions:Collection<int,array{session:Session,total:int,completed:int,expired:int,pending:int,percent:int}>
+     * }>
+     */
+    public function sessionBreakdownByProgram(): Collection
+    {
+        $today = Carbon::today();
+
+        return $this->scope(Program::query())
+            ->with(['sessions' => fn ($q) => $this->scopeAvailable($q), 'assignments:id,program_id,status'])
+            ->orderBy('id') // 'name' is a translatable JSON column — not orderable in Postgres
+            ->get()
+            ->map(function (Program $program) use ($today) {
+                $duplaIds = $program->assignments
+                    ->where('status', '!=', Assignment::STATUS_CANCELLED)
+                    ->pluck('id');
+                $totalDuplas = $duplaIds->count();
+
+                // Completed records for these duplas, counted per session.
+                $completedBySession = SessionRecord::query()
+                    ->whereIn('assignment_id', $duplaIds)
+                    ->where('status', SessionRecord::STATUS_COMPLETED)
+                    ->get(['session_id'])
+                    ->groupBy('session_id')
+                    ->map->count();
+
+                $sessions = $program->sessions->map(function (Session $session) use ($totalDuplas, $completedBySession, $today) {
+                    $completed = (int) $completedBySession->get($session->id, 0);
+                    $remaining = max(0, $totalDuplas - $completed);
+                    $isPast = $session->end_date && $session->end_date->lt($today);
+
+                    return [
+                        'session' => $session,
+                        'total' => $totalDuplas,
+                        'completed' => $completed,
+                        'expired' => $isPast ? $remaining : 0,
+                        'pending' => $isPast ? 0 : $remaining,
+                        'percent' => $totalDuplas ? (int) round($completed / $totalDuplas * 100) : 0,
+                    ];
+                })->values();
+
+                return [
+                    'program' => $program,
+                    'total_duplas' => $totalDuplas,
+                    'sessions' => $sessions,
+                ];
+            })
+            ->filter(fn (array $row) => $row['sessions']->isNotEmpty())
+            ->values();
     }
 
     /**
@@ -188,90 +278,201 @@ class ReportService
     {
         $today = Carbon::today();
 
-        $allSessions = $this->scope(Session::query())
-            ->get(['id', 'program_id', 'assignment_id', 'number', 'name', 'sort_order', 'start_date', 'end_date', 'survey_url'])
+        $assignments = $this->scope(Assignment::query())
+            ->with(['facilitator:id,name', 'participant:id,name', 'program:id,name', 'records'])
+            ->get();
+
+        [$programSessions, $extraByAssignment, $expectedByProgram] = $this->sessionMaps($today);
+        $activity = $this->lastActivityByAssignment($assignments->modelKeys());
+
+        return $assignments->map(fn (Assignment $assignment) => $this->duplaRow(
+            $assignment,
+            ($programSessions[$assignment->program_id] ?? collect())
+                ->concat($extraByAssignment[$assignment->id] ?? collect()),
+            $expectedByProgram[$assignment->program_id] ?? null,
+            $activity[$assignment->id] ?? null,
+            $today,
+        ));
+    }
+
+    /**
+     * The same follow-up row for a single dupla, for the individual report on
+     * the dupla page. Built by the very same code as the lists, so the panel
+     * and the exports can never disagree about a dupla's state.
+     *
+     * @return array<string,mixed>
+     */
+    public function duplaReport(Assignment $assignment): array
+    {
+        $today = Carbon::today();
+
+        [$programSessions, $extraByAssignment, $expectedByProgram] = $this->sessionMaps($today);
+
+        return $this->duplaRow(
+            $assignment->loadMissing(['facilitator:id,name', 'participant:id,name', 'program:id,name', 'records']),
+            ($programSessions[$assignment->program_id] ?? collect())
+                ->concat($extraByAssignment[$assignment->id] ?? collect()),
+            $expectedByProgram[$assignment->program_id] ?? null,
+            $this->lastActivityByAssignment([$assignment->id])[$assignment->id] ?? null,
+            $today,
+        );
+    }
+
+    /**
+     * Session lookups shared by every dupla row: curriculum sessions per program,
+     * per-dupla extras, and the session each program should be on today.
+     *
+     * @return array{0:Collection,1:Collection,2:Collection}
+     */
+    protected function sessionMaps(Carbon $today): array
+    {
+        $allSessions = $this->scopeAvailable($this->scope(Session::query()))
+            ->get(['id', 'program_id', 'assignment_id', 'number', 'name', 'sort_order', 'start_date', 'end_date', 'survey_url', 'stage_id'])
             ->sortBy('sort_order');
 
-        // Curriculum (program-wide) sessions per program + extras per dupla.
         $programSessions = $allSessions->whereNull('assignment_id')->groupBy('program_id');
         $extraByAssignment = $allSessions->whereNotNull('assignment_id')->groupBy('assignment_id');
 
         // "Expected" position follows the curriculum only, not ad-hoc extras.
         $expectedByProgram = $programSessions->map(fn ($sessions) => $this->expectedSession($sessions->values(), $today));
 
-        return $this->scope(Assignment::query())
-            ->with(['facilitator:id,name', 'participant:id,name', 'program:id,name', 'records'])
-            ->get()
-            ->map(function (Assignment $assignment) use ($today, $programSessions, $extraByAssignment, $expectedByProgram) {
-                $sessions = ($programSessions[$assignment->program_id] ?? collect())
-                    ->concat($extraByAssignment[$assignment->id] ?? collect())
-                    ->sortBy('sort_order')
-                    ->values();
-                $recordsBySession = $assignment->records->keyBy('session_id');
+        return [$programSessions, $extraByAssignment, $expectedByProgram];
+    }
 
-                $completed = 0;
-                $current = null; // first session not completed = where the dupla is
+    /**
+     * One dupla's follow-up row.
+     *
+     * @param  Collection<int,Session>  $sessions  curriculum + extras, unordered
+     * @param  array{at:Carbon,type:string}|null  $activity
+     * @return array<string,mixed>
+     */
+    protected function duplaRow(
+        Assignment $assignment,
+        Collection $sessions,
+        ?Session $expected,
+        ?array $activity,
+        Carbon $today,
+    ): array {
+        $sessions = $sessions->sortBy('sort_order')->values();
+        $recordsBySession = $assignment->records->keyBy('session_id');
 
-                foreach ($sessions as $session) {
-                    $record = $recordsBySession->get($session->id);
-                    if ($record && $record->status === SessionRecord::STATUS_COMPLETED) {
-                        $completed++;
-                    } elseif ($current === null) {
-                        $current = $session;
-                    }
+        $completed = 0;
+        $current = null; // first session not completed = where the dupla is
+
+        foreach ($sessions as $session) {
+            $record = $recordsBySession->get($session->id);
+            if ($record && $record->status === SessionRecord::STATUS_COMPLETED) {
+                $completed++;
+            } elseif ($current === null) {
+                $current = $session;
+            }
+        }
+
+        $total = $sessions->count();
+
+        // Days behind: how long the current session's window has been closed.
+        $daysBehind = 0;
+        if ($current && $current->end_date && $current->end_date->lt($today)) {
+            $daysBehind = $current->end_date->diffInDays($today);
+        }
+
+        $behind = $daysBehind > 0
+            || ($current && $expected && $current->sort_order < $expected->sort_order);
+
+        $finished = $total > 0 && $completed === $total;
+
+        if ($completed === $total) {
+            $category = 'dentro'; // finished
+        } elseif ($completed === 0) {
+            $category = 'sin_inicio';
+        } else {
+            $category = $behind ? 'fuera' : 'dentro';
+        }
+
+        // Has a live pending session: the current one's window is open now.
+        $sessionPending = $current
+            && (! $current->start_date || $current->start_date->lte($today))
+            && (! $current->end_date || $current->end_date->gte($today));
+
+        // Survey pending (approximation — external forms have no response tracking):
+        // a started session that carries a survey link and is not yet completed.
+        $surveyPending = $sessions->contains(function (Session $session) use ($today, $recordsBySession) {
+            if (blank($session->survey_url)) {
+                return false;
+            }
+            if ($session->start_date && $session->start_date->gt($today)) {
+                return false;
+            }
+            $record = $recordsBySession->get($session->id);
+
+            return ! ($record && $record->status === SessionRecord::STATUS_COMPLETED);
+        });
+
+        return [
+            'assignment' => $assignment,
+            'total' => $total,
+            'completed' => $completed,
+            'percent' => $total ? (int) round($completed / $total * 100) : 0,
+            'category' => $category,
+            'finished' => $finished,
+            'state_label' => match (true) {
+                $finished => 'Finalizada',
+                $category === 'sin_inicio' => 'Sin inicio',
+                $category === 'fuera' => 'Fuera del cronograma',
+                default => 'Dentro del cronograma',
+            },
+            'current' => $current,               // Session|null (null = finished)
+            'expected' => $expected,             // Session|null
+            'days_behind' => (int) $daysBehind,
+            'last_activity' => $activity['at'] ?? null,       // Carbon|null
+            'last_activity_type' => $activity['type'] ?? null, // sesión|mensaje|archivo|seguimiento
+            'session_pending' => (bool) $sessionPending,
+            'survey_pending' => (bool) $surveyPending,
+        ];
+    }
+
+    /**
+     * Most recent sign of life per dupla, whatever its source: a session filled
+     * in, a mailbox message, a shared file or a follow-up logged by the team.
+     * Pending records are ignored on purpose — they are created upfront with the
+     * dupla, so counting them would date every dupla's "activity" to its creation.
+     *
+     * @param  array<int,int>  $assignmentIds
+     * @return array<int,array{at:Carbon,type:string}>
+     */
+    protected function lastActivityByAssignment(array $assignmentIds): array
+    {
+        if ($assignmentIds === []) {
+            return [];
+        }
+
+        $sources = [
+            'sesión' => SessionRecord::query()
+                ->whereIn('status', [SessionRecord::STATUS_DRAFT, SessionRecord::STATUS_COMPLETED])
+                ->selectRaw('assignment_id, max(updated_at) as at'),
+            'mensaje' => Message::query()->selectRaw('assignment_id, max(created_at) as at'),
+            'archivo' => SharedFile::query()->selectRaw('assignment_id, max(created_at) as at'),
+            'seguimiento' => AssignmentFollowup::query()->selectRaw('assignment_id, max(created_at) as at'),
+        ];
+
+        $latest = [];
+
+        foreach ($sources as $type => $query) {
+            $rows = $query->whereIn('assignment_id', $assignmentIds)
+                ->groupBy('assignment_id')
+                ->pluck('at', 'assignment_id');
+
+            foreach ($rows as $assignmentId => $at) {
+                if (blank($at)) {
+                    continue;
                 }
-
-                $total = $sessions->count();
-                $expected = $expectedByProgram[$assignment->program_id] ?? null;
-
-                // Days behind: how long the current session's window has been closed.
-                $daysBehind = 0;
-                if ($current && $current->end_date && $current->end_date->lt($today)) {
-                    $daysBehind = $current->end_date->diffInDays($today);
+                $at = Carbon::parse($at);
+                if (! isset($latest[$assignmentId]) || $at->gt($latest[$assignmentId]['at'])) {
+                    $latest[$assignmentId] = ['at' => $at, 'type' => $type];
                 }
+            }
+        }
 
-                $behind = $daysBehind > 0
-                    || ($current && $expected && $current->sort_order < $expected->sort_order);
-
-                if ($completed === $total) {
-                    $category = 'dentro'; // finished
-                } elseif ($completed === 0) {
-                    $category = 'sin_inicio';
-                } else {
-                    $category = $behind ? 'fuera' : 'dentro';
-                }
-
-                // Has a live pending session: the current one's window is open now.
-                $sessionPending = $current
-                    && (! $current->start_date || $current->start_date->lte($today))
-                    && (! $current->end_date || $current->end_date->gte($today));
-
-                // Survey pending (approximation — external forms have no response tracking):
-                // a started session that carries a survey link and is not yet completed.
-                $surveyPending = $sessions->contains(function (Session $session) use ($today, $recordsBySession) {
-                    if (blank($session->survey_url)) {
-                        return false;
-                    }
-                    if ($session->start_date && $session->start_date->gt($today)) {
-                        return false;
-                    }
-                    $record = $recordsBySession->get($session->id);
-
-                    return ! ($record && $record->status === SessionRecord::STATUS_COMPLETED);
-                });
-
-                return [
-                    'assignment' => $assignment,
-                    'total' => $total,
-                    'completed' => $completed,
-                    'percent' => $total ? (int) round($completed / $total * 100) : 0,
-                    'category' => $category,
-                    'current' => $current,               // Session|null (null = finished)
-                    'expected' => $expected,             // Session|null
-                    'days_behind' => (int) $daysBehind,
-                    'session_pending' => (bool) $sessionPending,
-                    'survey_pending' => (bool) $surveyPending,
-                ];
-            });
+        return $latest;
     }
 }

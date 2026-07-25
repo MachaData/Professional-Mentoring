@@ -111,7 +111,9 @@ class NotificationAudienceResolver
             return collect();
         }
 
-        $rows = (new ReportService($orgId))->duplasBySchedule();
+        // Notifications target mentors/mentees, so a deactivated stage's sessions
+        // must not drive "atrasada" / "sesión pendiente" classifications.
+        $rows = (new ReportService($orgId, false))->duplasBySchedule();
 
         $ids = $rows->filter(function (array $row) use ($filters) {
             foreach ($filters as $filter) {

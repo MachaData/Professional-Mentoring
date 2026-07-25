@@ -16,6 +16,7 @@ class RolePermissionSeeder extends Seeder
             User::ROLE_COORDINATOR,
             User::ROLE_FACILITATOR,
             User::ROLE_PARTICIPANT,
+            User::ROLE_CLIENT,
         ] as $role) {
             Role::findOrCreate($role, 'web');
         }

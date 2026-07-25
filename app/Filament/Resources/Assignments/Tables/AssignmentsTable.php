@@ -23,6 +23,9 @@ class AssignmentsTable
                 TextColumn::make('records_count')->label('Sesiones')->counts('records')->badge()->color('info'),
                 TextColumn::make('records_completed')->label('Completadas')->badge()->color('success')
                     ->state(fn ($record) => $record->records()->where('status', 'completed')->count()),
+                TextColumn::make('followups_count')->label('Seguimientos')->counts('followups')->badge()->color('gray'),
+                TextColumn::make('followups_max_contacted_at')->label('Último contacto')
+                    ->max('followups', 'contacted_at')->date('d/m/Y')->placeholder('—')->toggleable(),
                 TextColumn::make('status')->label('Estado')->badge()
                     ->formatStateUsing(fn ($state) => match ($state) {
                         'active' => 'Activa', 'paused' => 'Pausada',

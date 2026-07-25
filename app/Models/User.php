@@ -17,10 +17,24 @@ class User extends Authenticatable implements FilamentUser, HasName
     use HasFactory, HasRoles, Notifiable;
 
     public const ROLE_SUPERADMIN = 'superadmin';
+
     public const ROLE_ORG_ADMIN = 'organization_admin';
+
     public const ROLE_COORDINATOR = 'coordinator';
+
     public const ROLE_FACILITATOR = 'facilitator';
+
     public const ROLE_PARTICIPANT = 'participant';
+
+    /**
+     * Read-only "client" role: the organization's client may enter the admin
+     * panel to see the desktop, reports and indicators (progress, duplas,
+     * sessions, states and follow-up history) but cannot create, edit, delete
+     * or configure anything. It is neither content manager nor dupla supervisor,
+     * so every existing write gate (canManageContent / canSuperviseDuplas)
+     * already excludes it — this role only ever reads.
+     */
+    public const ROLE_CLIENT = 'client';
 
     protected $fillable = [
         'organization_id', 'name', 'email', 'role', 'phone', 'photo',
@@ -84,6 +98,12 @@ class User extends Authenticatable implements FilamentUser, HasName
         return $this->role === self::ROLE_PARTICIPANT;
     }
 
+    /** Read-only client: sees the panel's reports and indicators, edits nothing. */
+    public function isClient(): bool
+    {
+        return $this->role === self::ROLE_CLIENT;
+    }
+
     /** Roles that can create/edit/delete content in the panel. */
     public function canManageContent(): bool
     {
@@ -104,10 +124,12 @@ class User extends Authenticatable implements FilamentUser, HasName
 
     public function canAccessPanel(Panel $panel): bool
     {
-        // Admin panel: superadmins, org-admins (full) and coordinators (read-only).
+        // Admin panel: superadmins, org-admins (full), coordinators (supervise
+        // duplas, read-only elsewhere) and clients (fully read-only observers).
         // Facilitators/participants use the dedicated Blade/Livewire portals.
         return in_array($this->role, [
-            self::ROLE_SUPERADMIN, self::ROLE_ORG_ADMIN, self::ROLE_COORDINATOR,
+            self::ROLE_SUPERADMIN, self::ROLE_ORG_ADMIN,
+            self::ROLE_COORDINATOR, self::ROLE_CLIENT,
         ], true) && $this->status === 'active';
     }
 

@@ -7,6 +7,7 @@ use Filament\Actions\Action;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 /** Read-only view of files/links/notes shared within the dupla. */
 class FilesRelationManager extends RelationManager
@@ -14,6 +15,12 @@ class FilesRelationManager extends RelationManager
     protected static string $relationship = 'files';
 
     protected static ?string $title = 'Archivos compartidos';
+
+    /** Private mentor↔mentee files are hidden from read-only clients. */
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+    {
+        return ! (auth()->user()?->isClient() ?? false);
+    }
 
     public function isReadOnly(): bool
     {

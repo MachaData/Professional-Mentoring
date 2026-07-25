@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources\Assignments;
 
+use App\Filament\Concerns\ManagedBySupervisor;
 use App\Filament\Resources\Assignments\Pages\CreateAssignment;
 use App\Filament\Resources\Assignments\Pages\EditAssignment;
 use App\Filament\Resources\Assignments\Pages\ListAssignments;
 use App\Filament\Resources\Assignments\Schemas\AssignmentForm;
+use App\Filament\Resources\Assignments\Schemas\AssignmentInfolist;
 use App\Filament\Resources\Assignments\Tables\AssignmentsTable;
 use App\Models\Assignment;
 use BackedEnum;
@@ -16,7 +18,7 @@ use Filament\Tables\Table;
 
 class AssignmentResource extends Resource
 {
-    use \App\Filament\Concerns\ManagedBySupervisor;
+    use ManagedBySupervisor;
 
     protected static ?string $model = Assignment::class;
 
@@ -37,6 +39,12 @@ class AssignmentResource extends Resource
         return AssignmentForm::configure($schema);
     }
 
+    /** Individual dupla report shown at the top of the dupla page. */
+    public static function infolist(Schema $schema): Schema
+    {
+        return AssignmentInfolist::configure($schema);
+    }
+
     public static function table(Table $table): Table
     {
         return AssignmentsTable::configure($table);
@@ -46,6 +54,7 @@ class AssignmentResource extends Resource
     {
         return [
             RelationManagers\RecordsRelationManager::class,
+            RelationManagers\FollowupsRelationManager::class,
             RelationManagers\ExtraSessionsRelationManager::class,
             RelationManagers\FilesRelationManager::class,
             RelationManagers\MessagesRelationManager::class,

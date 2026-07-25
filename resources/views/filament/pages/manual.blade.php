@@ -22,7 +22,8 @@
                 <ul class="mt-2 list-disc space-y-1 pl-5">
                     <li><strong>Superadministrador:</strong> acceso total, incluidas las Organizaciones.</li>
                     <li><strong>Administrador de organización:</strong> gestiona todo dentro de su organización.</li>
-                    <li><strong>Coordinador:</strong> acceso de solo lectura al contenido y puede enviar notificaciones y gestionar usuarios/asignaciones.</li>
+                    <li><strong>Coordinador:</strong> ve <em>todo</em> el seguimiento —duplas, mentores, mentees, sesiones, reportes, buzones, archivos compartidos y calendario— y puede crear y editar duplas y personas, registrar seguimientos y enviar notificaciones. <strong>No puede eliminar nada</strong> ni tocar la configuración (organizaciones, clientes, tipos de programa, formularios, plantillas de correo y recordatorios); programas, sesiones, herramientas y encuestas los ve en solo lectura.</li>
+                    <li><strong>Cliente:</strong> observador de solo lectura. Ve escritorio, reportes, indicadores, programas, sesiones, duplas y personas, pero no crea, edita ni elimina nada, y los buzones y archivos privados de cada dupla quedan fuera de su alcance.</li>
                     <li><strong>Facilitador (mentor)</strong> y <strong>Participante</strong> no entran aquí: usan sus propios portales.</li>
                 </ul>
             </div>
@@ -174,13 +175,15 @@
                 <li>Elige el <strong>programa</strong>, el <strong>facilitador</strong> y el <strong>participante</strong>.</li>
                 <li>Define estado y fechas. Guarda.</li>
             </ol>
-            <p class="mt-3 text-gray-500">Un participante solo puede tener un facilitador por programa. Con <strong>«Ver dupla»</strong> abres su ficha, que incluye cuatro pestañas:</p>
+            <p class="mt-3 text-gray-500">Un participante solo puede tener un facilitador por programa. Con <strong>«Ver dupla»</strong> abres su ficha, que empieza con el <strong>informe individual de la dupla</strong> —mentor, mentee, programa, estado del cronograma, avance, sesión actual y esperada, días de atraso y última actividad— y continúa con estas pestañas:</p>
             <ul class="mt-2 list-disc space-y-1 pl-5">
                 <li><strong>Sesiones registradas:</strong> historial de cada registro (estado, asistencia, modalidad, fecha real, enlace de reunión y respuestas del formulario).</li>
+                <li><strong>Seguimiento:</strong> los contactos y acciones que el equipo registra con el mentor o el mentee.</li>
                 <li><strong>Sesiones adicionales:</strong> sesiones extra propias de esa dupla.</li>
                 <li><strong>Archivos compartidos:</strong> los materiales privados de la dupla.</li>
-                <li><strong>Buzón de mensajes:</strong> la conversación entre mentor y participante.</li>
+                <li><strong>Buzón de mensajes:</strong> la conversación entre mentor y participante. Se revisa en <em>solo lectura</em>: pulsa <strong>«Leer»</strong> para ver el mensaje completo, su sesión relacionada y el estado leído/no leído, y <strong>«Adjunto»</strong> para abrir el archivo. Nadie desde el panel puede escribir, editar ni borrar en la conversación de una dupla.</li>
             </ul>
+            <p class="mt-3 rounded-lg bg-gray-50 p-3 text-gray-600 dark:bg-white/5 dark:text-gray-400"><strong>Última actividad</strong> es la señal de vida más reciente de la dupla, venga de donde venga: una sesión registrada, un mensaje del buzón, un archivo compartido o un seguimiento del equipo. Las sesiones que aún están pendientes no cuentan, porque se crean junto con la dupla.</p>
         </section>
 
         {{-- RECURSOS --}}
@@ -192,14 +195,27 @@
             <p class="mt-3">Las <strong>Herramientas</strong> son los materiales y recursos del programa (documentos, plantillas, videos, enlaces). Es la forma principal de <strong>subir materiales</strong> que verán mentores y participantes en sus portales.</p>
             <ol class="steps mt-4 space-y-3">
                 <li>Ve a <strong>Recursos → Herramientas</strong> y pulsa <strong>«Nueva herramienta»</strong>.</li>
-                <li>Escribe el <strong>nombre</strong> y la descripción (ES/EN), el tipo, la categoría y la visibilidad.</li>
+                <li>Escribe el <strong>nombre</strong> y la descripción (ES/EN), el tipo y la categoría.</li>
+                <li>Define <strong>quién lo ve</strong>:
+                    <ul class="mt-1 list-disc space-y-1 pl-5">
+                        <li><strong>Visibilidad (rol):</strong> mentor (facilitador), participante (mentee), ambos o todos.</li>
+                        <li><strong>Unidad de negocio:</strong> déjala vacía para todas. Si eliges una, el material solo lo verán los usuarios de esa unidad.</li>
+                        <li><strong>Idioma:</strong> es una referencia, no un filtro que oculte. Se muestra como etiqueta (ES, EN…) junto al material y permite filtrar la lista. Para el mismo documento en dos idiomas, crea un material por idioma.</li>
+                    </ul>
+                </li>
                 <li>Elige el <strong>recurso</strong>:
                     <ul class="mt-1 list-disc space-y-1 pl-5">
                         <li><strong>Archivo:</strong> súbelo desde tu equipo (PDF, Office, imagen…).</li>
                         <li><strong>Enlace externo:</strong> pega la dirección (Google Drive, Forms, YouTube…).</li>
                     </ul>
                 </li>
-                <li>En <strong>«Asociaciones»</strong> indica <strong>dónde aparece</strong>: por programa, y opcionalmente acotado a una etapa o a una sesión concreta. Puedes añadir varias asociaciones.</li>
+                <li>En <strong>«Asociaciones»</strong> indica <strong>dónde aparece</strong>:
+                    <ul class="mt-1 list-disc space-y-1 pl-5">
+                        <li>Solo <strong>Programa</strong> (etapa y sesión vacías): material general, sale en la sección «Materiales» del portal.</li>
+                        <li>Con <strong>Etapa</strong> o <strong>Sesión</strong>: sale <em>solo</em> dentro de esas sesiones, nunca en la lista general.</li>
+                        <li>¿Lo quieres en los dos sitios? Añade dos asociaciones: una solo con programa y otra con la sesión.</li>
+                    </ul>
+                </li>
                 <li>Guarda. El material aparecerá en los portales del mentor y del participante según lo asociado.</li>
             </ol>
             <div class="mt-3 rounded-lg bg-gray-50 p-3 text-gray-600 dark:bg-white/5 dark:text-gray-400">Además de estos materiales «oficiales», dentro de cada dupla el mentor y el participante pueden subir sus propios <strong>archivos compartidos</strong> desde sus portales.</div>
@@ -257,10 +273,11 @@
         <section class="rounded-xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
             <h2 class="text-lg font-semibold text-gray-950 dark:text-white">Reportes y Cronograma</h2>
             <ul class="mt-3 list-disc space-y-2 pl-5">
-                <li><strong>Reportes de avance:</strong> muestra en qué sesión va cada dupla y las agrupa por estado — <strong>dentro</strong> (al día), <strong>fuera</strong> (atrasadas) y <strong>sin inicio</strong>. Incluye <strong>«Exportar Excel»</strong>.</li>
+                <li><strong>Reportes de avance:</strong> reúne cinco vistas —<strong>avance por sesión</strong> (realizadas, pendientes y vencidas sobre el total de duplas), <strong>avance general por sesión</strong> (qué duplas están en cada sesión) y las tres listas por cronograma: <strong>dentro</strong> (al día), <strong>fuera</strong> (atrasadas) y <strong>sin inicio</strong>. Cada lista muestra su <strong>total</strong> y, por dupla, mentor, mentee, programa, sesión actual, sesión esperada, avance, estado, última actividad y días de atraso. Incluye <strong>«Exportar Excel»</strong>, con una hoja por reporte más la hoja <strong>«Informe por dupla»</strong>.</li>
+                <li><strong>Informe individual por dupla:</strong> el enlace <strong>«Ver informe»</strong> de cualquier lista abre la ficha de la dupla, encabezada por el mismo detalle de seguimiento y seguida del historial completo (sesiones, seguimiento, archivos y buzón).</li>
                 <li><strong>Cronograma:</strong> calendario mensual con las sesiones de la organización y contadores de duplas. Navega entre meses con las flechas.</li>
             </ul>
-            <p class="mt-3 text-gray-500">Ambos están disponibles para superadmin, administrador de organización y coordinador.</p>
+            <p class="mt-3 text-gray-500">Disponibles para superadmin, administrador de organización, coordinador y cliente (este último, solo lectura). Coordinador y cliente no ven las sesiones desactivadas ni las de etapas desactivadas en ninguna cifra.</p>
         </section>
 
         {{-- FAQ --}}

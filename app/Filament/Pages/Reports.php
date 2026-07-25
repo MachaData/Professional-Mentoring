@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Exports\CoordinatorReportsExport;
+use App\Models\User;
 use App\Services\ReportService;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -26,21 +27,28 @@ class Reports extends Page
     protected static ?int $navigationSort = 1;
 
     public Collection $sessionProgress;
+
+    /** Per-program, per-session breakdown counted over every dupla. */
+    public Collection $sessionBreakdown;
+
     public Collection $duplas;
+
     /** @var array<int,array{label:string,order:int,count:int,duplas:Collection}> */
     public array $currentGroups = [];
+
     /** @var array<string,int> */
     public array $counts = [];
 
-    /** Superadmin, org-admin and coordinator can see reports. */
+    /** Superadmin, org-admin, coordinator and read-only client can see reports. */
     public static function canAccess(): bool
     {
         $user = auth()->user();
 
         return $user && in_array($user->role, [
-            \App\Models\User::ROLE_SUPERADMIN,
-            \App\Models\User::ROLE_ORG_ADMIN,
-            \App\Models\User::ROLE_COORDINATOR,
+            User::ROLE_SUPERADMIN,
+            User::ROLE_ORG_ADMIN,
+            User::ROLE_COORDINATOR,
+            User::ROLE_CLIENT,
         ], true);
     }
 
@@ -54,7 +62,10 @@ class Reports extends Page
                     $user = auth()->user();
                     $orgId = $user->isSuperadmin() ? null : $user->organization_id;
 
-                    return Excel::download(new CoordinatorReportsExport($orgId), 'reportes-avance.xlsx');
+                    return Excel::download(
+                        new CoordinatorReportsExport($orgId, $user->canManageContent()),
+                        'reportes-avance.xlsx',
+                    );
                 }),
         ];
     }
@@ -66,6 +77,7 @@ class Reports extends Page
         $locale = app()->getLocale();
 
         $this->sessionProgress = $report->progressBySession();
+        $this->sessionBreakdown = $report->sessionBreakdownByProgram();
         $this->duplas = $report->duplasBySchedule();
         $this->counts = [
             'dentro' => $this->duplas->where('category', 'dentro')->count(),

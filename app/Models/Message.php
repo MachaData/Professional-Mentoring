@@ -31,6 +31,12 @@ class Message extends Model
         return $this->belongsTo(User::class, 'sender_id');
     }
 
+    /** Optional session the message is about; null = general message. */
+    public function session(): BelongsTo
+    {
+        return $this->belongsTo(Session::class);
+    }
+
     public function isRead(): bool
     {
         return $this->read_at !== null;

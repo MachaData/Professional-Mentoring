@@ -37,6 +37,11 @@
                         @endif
                         <span class="truncate text-sm {{ $unread ? 'font-semibold text-slate-800' : 'text-slate-500' }}">{{ $message->subject ?: '(sin asunto)' }}</span>
                     </div>
+                    @if($message->session)
+                        <span class="mt-0.5 w-fit rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                            S{{ $message->session->number }} · {{ $message->session->getTranslation('name', app()->getLocale()) }}
+                        </span>
+                    @endif
                 </button>
             @empty
                 <div class="grid h-40 place-items-center px-4 text-center text-sm text-slate-400">{{ __('No hay mensajes.') }}</div>
@@ -53,6 +58,17 @@
                     <label class="pm-label">{{ __('Asunto') }} <span class="text-brand-600">*</span></label>
                     <input type="text" wire:model="subject" class="pm-input">
                     @error('subject') <p class="mt-1 text-xs text-brand-600">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label class="pm-label">{{ __('Sesión relacionada') }}</label>
+                    <select wire:model="targetSessionId" class="pm-input">
+                        <option value="">{{ __('Mensaje general (sin sesión)') }}</option>
+                        @foreach ($this->sessions as $s)
+                            <option value="{{ $s->id }}">S{{ $s->number }} · {{ $s->getTranslation('name', app()->getLocale()) }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-slate-400">{{ __('Opcional. Ayuda a ubicar el mensaje dentro del programa.') }}</p>
+                    @error('targetSessionId') <p class="mt-1 text-xs text-brand-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="pm-label">{{ __('Mensaje') }}</label>
@@ -80,6 +96,11 @@
                     <span>{{ $msg->created_at->format('d/m/Y H:i') }}</span>
                     @if($mine)
                         <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{{ $msg->read_at ? '✓✓ '.__('Leído') : '✓ '.__('Enviado') }}</span>
+                    @endif
+                    @if($msg->session)
+                        <span class="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
+                            S{{ $msg->session->number }} · {{ $msg->session->getTranslation('name', app()->getLocale()) }}
+                        </span>
                     @endif
                 </div>
                 <div class="mt-4 whitespace-pre-line text-sm leading-relaxed text-slate-700">{{ $msg->body ?: '—' }}</div>

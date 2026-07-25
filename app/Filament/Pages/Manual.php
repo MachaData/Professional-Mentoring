@@ -30,6 +30,7 @@ class Manual extends Page
             User::ROLE_SUPERADMIN,
             User::ROLE_ORG_ADMIN,
             User::ROLE_COORDINATOR,
+            User::ROLE_CLIENT,
         ], true);
     }
 }

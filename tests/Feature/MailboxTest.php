@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\Assignments\Pages\ViewAssignment;
+use App\Filament\Resources\Assignments\RelationManagers\MessagesRelationManager;
 use App\Livewire\Mailbox;
 use App\Livewire\PrivateFiles;
 use App\Models\Assignment;
 use App\Models\Message;
+use App\Models\Session;
 use App\Models\SharedFile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -95,6 +98,74 @@ class MailboxTest extends TestCase
             ->call('open', $unread->id);
 
         $this->assertNotNull($unread->fresh()->read_at);
+    }
+
+    // ---- Optional session on a message ------------------------------------
+
+    public function test_a_message_can_be_tied_to_a_session_or_stay_general(): void
+    {
+        $a = $this->assignment();
+        $session = $a->program->sessions()->where('number', 3)->firstOrFail();
+
+        Livewire::actingAs($this->mentor())
+            ->test(Mailbox::class, ['assignment' => $a])
+            ->set('subject', 'Sobre la sesión 3')
+            ->set('bodyText', 'Revisa el material antes')
+            ->set('targetSessionId', (string) $session->id)
+            ->call('send')
+            ->assertHasNoErrors();
+
+        Livewire::actingAs($this->mentor())
+            ->test(Mailbox::class, ['assignment' => $a])
+            ->set('subject', 'Saludo general')
+            ->call('send')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('messages', [
+            'assignment_id' => $a->id, 'subject' => 'Sobre la sesión 3', 'session_id' => $session->id,
+        ]);
+        $this->assertDatabaseHas('messages', [
+            'assignment_id' => $a->id, 'subject' => 'Saludo general', 'session_id' => null,
+        ]);
+    }
+
+    public function test_a_message_cannot_point_to_a_session_outside_the_program(): void
+    {
+        $a = $this->assignment();
+        // A session id that is not among the dupla's own sessions: the picker
+        // never offers it, but the value travels from the browser.
+        $foreign = (int) Session::query()->max('id') + 1;
+
+        Livewire::actingAs($this->mentor())
+            ->test(Mailbox::class, ['assignment' => $a])
+            ->set('subject', 'Intento')
+            ->set('targetSessionId', (string) $foreign)
+            ->call('send')
+            ->assertHasErrors(['targetSessionId']);
+
+        $this->assertDatabaseMissing('messages', ['assignment_id' => $a->id, 'subject' => 'Intento']);
+    }
+
+    public function test_supervisors_read_the_mailbox_with_its_session_and_read_state(): void
+    {
+        $a = $this->assignment();
+        $session = $a->program->sessions()->where('number', 2)->firstOrFail();
+
+        $a->messages()->create([
+            'organization_id' => $a->organization_id,
+            'sender_id' => $this->mentee()->id,
+            'session_id' => $session->id,
+            'subject' => 'Consulta de la sesión 2',
+            'body' => 'Tengo una duda con la actividad',
+        ]);
+
+        $coordinator = User::where('email', 'coordinador@demo.test')->firstOrFail();
+
+        Livewire::actingAs($coordinator)
+            ->test(MessagesRelationManager::class, ['ownerRecord' => $a, 'pageClass' => ViewAssignment::class])
+            ->assertOk()
+            ->assertSee('Consulta de la sesión 2')
+            ->assertSee('S'.$session->number);
     }
 
     public function test_private_file_general_vs_session_scope(): void
