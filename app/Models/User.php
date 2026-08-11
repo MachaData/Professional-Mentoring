@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasName;
 use Filament\Panel;
@@ -118,6 +119,19 @@ class User extends Authenticatable implements FilamentUser, HasName
     public function canSuperviseDuplas(): bool
     {
         return $this->canManageContent() || $this->isCoordinator();
+    }
+
+    // ---- Password recovery ----------------------------------------------
+
+    /**
+     * Send the platform's own recovery email instead of Laravel's default
+     * English one, rendered in the language the user picked.
+     */
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        $this->notify(
+            (new ResetPasswordNotification($token))->locale($this->locale ?: config('app.locale'))
+        );
     }
 
     // ---- Filament ------------------------------------------------------

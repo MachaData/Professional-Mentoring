@@ -74,15 +74,17 @@
     "Modalidad": "Modality",
     "Link de la reunión": "Meeting link",
     "El participante verá el link y la información de esta sesión.": "The participant will see the link and this session's information.",
-    "Pendiente": "Pending",
     "Asistió": "Attended",
     "No asistió": "Did not attend",
-    "Reprogramada": "Rescheduled",
     "Presencial": "In person",
     "Virtual": "Virtual",
     "Guardando…": "Saving…",
     "interno": "internal",
     "Seleccione…": "Select…",
-    "Registrar sesión": "Register session",
-    "Guardar borrador": "Save draft"
+    "Restablece tu contraseña de :app": "Reset your :app password",
+    "Hola :name": "Hi :name",
+    "Recibimos una solicitud para restablecer la contraseña de tu cuenta.": "We received a request to reset your account password.",
+    "Crear una nueva contraseña": "Create a new password",
+    "El enlace vence en :minutes minutos.": "This link expires in :minutes minutes.",
+    "Si no solicitaste el cambio, ignora este correo: tu contraseña seguirá siendo la misma.": "If you did not request this change, ignore this email — your password stays the same."
 }

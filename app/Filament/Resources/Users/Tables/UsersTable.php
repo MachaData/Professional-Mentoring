@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Filament\Shared\PasswordAdminActions;
 use App\Models\User;
+use App\Services\PasswordAdministrationService;
 use App\Services\UserInvitationService;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -16,6 +18,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Password;
 
 class UsersTable
 {
@@ -84,6 +87,8 @@ class UsersTable
                             Notification::make()->title('No se pudo enviar')->body($e->getMessage())->danger()->send();
                         }
                     }),
+                PasswordAdminActions::sendResetLink(),
+                PasswordAdminActions::resetPassword(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -106,6 +111,33 @@ class UsersTable
                                 }
                             }
                             Notification::make()->title("Invitaciones enviadas: {$sent}")->success()->send();
+                        }),
+                    BulkAction::make('sendResetLinkBulk')
+                        ->label('Enviar enlaces de recuperación')
+                        ->icon('heroicon-o-envelope-open')
+                        ->visible(fn () => auth()->user()->canSuperviseDuplas())
+                        ->requiresConfirmation()
+                        ->modalDescription('Cada usuario seleccionado recibirá un enlace para crear una contraseña nueva. Las contraseñas actuales no cambian.')
+                        ->action(function (Collection $records) {
+                            $service = app(PasswordAdministrationService::class);
+                            $sent = 0;
+                            $skipped = 0;
+
+                            foreach ($records as $record) {
+                                if (! PasswordAdminActions::maySendResetLink($record)) {
+                                    $skipped++;
+
+                                    continue;
+                                }
+                                $service->sendResetLink($record) === Password::RESET_LINK_SENT
+                                    ? $sent++
+                                    : $skipped++;
+                            }
+
+                            Notification::make()
+                                ->title("Enlaces enviados: {$sent}".($skipped ? " · Omitidos: {$skipped}" : ''))
+                                ->success()
+                                ->send();
                         }),
                     DeleteBulkAction::make(),
                 ]),
